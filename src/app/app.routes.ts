@@ -1,3 +1,13 @@
 import { Routes } from '@angular/router';
 
-export const routes: Routes = [];
+export const routes: Routes = [
+  {
+    path: '',
+    redirectTo: 'test',
+    pathMatch: 'full'
+  },
+  {
+    path: 'test',
+    loadComponent: () => import('./pages/service-tester.component').then(m => m.ServiceTesterComponent)
+  }
+];
