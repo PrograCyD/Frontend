@@ -1,0 +1,87 @@
+.star-rating {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.star {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: default;
+  color: var(--muted-foreground);
+  transition: all var(--transition-fast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.star.interactive {
+  cursor: pointer;
+}
+
+.star.interactive:hover,
+.star.interactive:focus-visible {
+  color: var(--primary);
+  transform: scale(1.1);
+}
+
+.star svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Star Sizes */
+.star-sm .star {
+  width: 14px;
+  height: 14px;
+}
+
+.star-md .star {
+  width: 20px;
+  height: 20px;
+}
+
+.star-lg .star {
+  width: 28px;
+  height: 28px;
+}
+
+/* Star States */
+.star svg[fill="currentColor"] {
+  color: var(--primary);
+}
+
+.star svg[fill="none"] {
+  color: var(--muted);
+}
+
+/* Rating Value */
+.rating-value {
+  margin-left: 8px;
+  font-size: 0.875rem;
+  font-weight: var(--font-weight-medium);
+  color: var(--foreground);
+}
+
+/* Readonly State */
+.readonly .star {
+  cursor: default;
+}
+
+.readonly .star:hover {
+  transform: none;
+}
+
+/* Accessibility */
+.star:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+.star:disabled {
+  cursor: default;
+  opacity: 1;
+}

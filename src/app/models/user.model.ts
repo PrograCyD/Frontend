@@ -6,6 +6,11 @@
 export interface User {
   userId: number;
   email: string;
+  username?: string;
+  firstName?: string;
+  lastName?: string;
+  bio?: string;
+  favoriteGenres?: string[];
   role: 'admin' | 'user';
   createdAt?: Date;
   updatedAt?: Date;

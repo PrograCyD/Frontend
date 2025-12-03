@@ -1,0 +1,131 @@
+<!-- Hero Section con Película Destacada -->
+@if (featuredMovie(); as featured) {
+  <section class="hero-section" [style.backgroundImage]="'url(' + featured.backdropPath + ')'">
+    <div class="hero-overlay"></div>
+    <div class="hero-content">
+      <div class="hero-info">
+        <h1 class="hero-title">{{ featured.title }}</h1>
+        <div class="hero-metadata">
+          @if (featured.voteAverage) {
+            <span class="hero-rating">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+              </svg>
+              {{ featured.voteAverage.toFixed(1) }}
+            </span>
+          }
+          @if (featured.releaseDate) {
+            <span class="hero-year">{{ getYear(featured.releaseDate) }}</span>
+          }
+          @if (featured.runtime) {
+            <span class="hero-runtime">{{ featured.runtime }} min</span>
+          }
+        </div>
+        <p class="hero-overview">{{ featured.overview }}</p>
+        <div class="hero-genres">
+          @for (genre of featured.genres; track genre) {
+            <span class="genre-badge">{{ genre }}</span>
+          }
+        </div>
+
+        <!-- Nueva sección de calificación en el hero -->
+        <div class="hero-rating-section">
+          <span class="rating-label">Califica esta película:</span>
+          <app-star-rating
+            [rating]="heroRating()"
+            [readonly]="false"
+            [size]="'lg'"
+            (ratingChange)="onHeroRatingChange($event)">
+          </app-star-rating>
+        </div>
+
+        <div class="hero-actions">
+          <button class="btn btn-primary" (click)="viewFeaturedMovieDetails()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M12 16v-4"/>
+              <path d="M12 8h.01"/>
+            </svg>
+            Ver Detalles
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+}
+
+<!-- Top 10 Películas -->
+<section class="section">
+  <div class="section-header">
+    <h2 class="section-title">Top 10 Películas</h2>
+  </div>
+  <div class="top-movies-grid">
+    @for (movie of topMovies(); track movie.movieId; let idx = $index) {
+      <app-top-movie-card
+        [movie]="movie"
+        [rank]="idx + 1"
+        (movieClick)="onMovieClick(movie)"
+        (ratingChange)="onTopMovieRatingChange($event)">
+      </app-top-movie-card>
+    }
+  </div>
+</section>
+
+<!-- Recomendaciones para ti -->
+@if (recommendedMovies().length > 0) {
+  <section class="section">
+    <div class="section-header">
+      <h2 class="section-title">Recomendaciones para ti</h2>
+      <a routerLink="/recommendations" class="section-link">Ver más</a>
+    </div>
+    <div class="movies-carousel">
+      @for (movie of recommendedMovies(); track movie.movieId) {
+        <app-movie-card
+          [movie]="movie"
+          (movieClick)="onMovieClick(movie)"
+          (ratingChange)="onMovieRatingChange($event)">
+        </app-movie-card>
+      }
+    </div>
+  </section>
+}
+
+<!-- Recomendaciones por géneros favoritos -->
+@if (genreRecommendations().length > 0) {
+  <section class="section">
+    <div class="section-header">
+      <h2 class="section-title">Porque te gusta Acción</h2>
+      <a routerLink="/movies" [queryParams]="{genre: 'Acción'}" class="section-link">Ver más</a>
+    </div>
+    <div class="movies-carousel">
+      @for (movie of genreRecommendations(); track movie.movieId) {
+        <app-movie-card
+          [movie]="movie"
+          (movieClick)="onMovieClick(movie)"
+          (ratingChange)="onMovieRatingChange($event)">
+        </app-movie-card>
+      }
+    </div>
+  </section>
+}
+
+<!-- Porque te gustó [tag] -->
+@if (becauseYouLikedMovies().length > 0) {
+  <section class="section">
+    <div class="section-header">
+      <h2 class="section-title">Porque te gustó "must watch"</h2>
+      <a routerLink="/movies" class="section-link">Ver más</a>
+    </div>
+    <div class="movies-carousel">
+      @for (movie of becauseYouLikedMovies(); track movie.movieId) {
+        <app-movie-card
+          [movie]="movie"
+          (movieClick)="onMovieClick(movie)"
+          (ratingChange)="onMovieRatingChange($event)">
+        </app-movie-card>
+      }
+    </div>
+  </section>
+}
+
+

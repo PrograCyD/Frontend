@@ -1,0 +1,53 @@
+<div class="movie-card" (click)="onCardClick()">
+  <!-- Poster -->
+  <div class="movie-poster">
+    <img
+      [src]="getPosterUrl()"
+      [alt]="movie.title"
+      appImageFallback
+      class="poster-image"
+    >
+    <div class="poster-overlay">
+      <div class="overlay-content">
+        <button class="details-button" aria-label="Ver detalles">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+          <span>Ver detalles</span>
+        </button>
+        @if (showRating) {
+          <div class="rating-overlay">
+            <span class="rating-label">Tu calificación:</span>
+            <app-star-rating
+              [rating]="getAverageRating()"
+              [readonly]="false"
+              size="md"
+              (ratingChange)="onRatingChange($event)"
+            />
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div class="movie-content">
+    <!-- Title & Year -->
+    <div class="movie-header">
+      <h3 class="movie-title">{{ movie.title }}</h3>
+      @if (getYear()) {
+        <span class="movie-year">{{ getYear() }}</span>
+      }
+    </div>
+
+    <!-- Genres -->
+    @if (showGenres && getGenreNames().length > 0) {
+      <div class="movie-genres">
+        @for (genre of getGenreNames(); track genre) {
+          <span class="genre-badge">{{ genre }}</span>
+        }
+      </div>
+    }
+  </div>
+</div>

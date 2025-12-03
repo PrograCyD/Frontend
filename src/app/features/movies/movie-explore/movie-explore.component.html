@@ -1,0 +1,183 @@
+<div class="explore-container">
+  <!-- Header -->
+  <header class="explore-header">
+    <h1 class="page-title">Explorar películas</h1>
+    <p class="page-description">
+      Descubre y busca entre todas las películas disponibles
+    </p>
+  </header>
+
+  <!-- Search and Filter Bar -->
+  <div class="search-filter-section">
+    <div class="search-filter-bar">
+      <!-- Search Input -->
+      <div class="search-input-wrapper">
+        <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/>
+          <path d="m21 21-4.35-4.35"/>
+        </svg>
+        <input
+          type="text"
+          placeholder="Buscar películas por nombre..."
+          [value]="searchQuery()"
+          (input)="onSearchChange($event)"
+          class="search-input"
+        />
+      </div>
+
+      <!-- Filter Button -->
+      <button
+        (click)="toggleFilters()"
+        [class.active]="showFilters()"
+        class="filter-button"
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+        </svg>
+        <span>Filtros</span>
+        @if (activeFiltersCount() > 0) {
+          <span class="filter-badge">{{ activeFiltersCount() }}</span>
+        }
+      </button>
+    </div>
+
+    <!-- Active Filters Display -->
+    @if (activeFiltersCount() > 0) {
+      <div class="active-filters">
+        <span class="active-filters-label">Filtros activos:</span>
+
+        @for (genre of selectedGenres(); track genre) {
+          <span class="filter-chip genre-chip">
+            <span>{{ genre }}</span>
+            <button (click)="toggleGenre(genre)" class="remove-chip">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"/>
+                <line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
+          </span>
+        }
+
+        @for (actor of selectedCast(); track actor) {
+          <span class="filter-chip cast-chip">
+            <span>{{ actor }}</span>
+            <button (click)="toggleCast(actor)" class="remove-chip">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"/>
+                <line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
+          </span>
+        }
+
+        @for (director of selectedDirectors(); track director) {
+          <span class="filter-chip director-chip">
+            <span>{{ director }}</span>
+            <button (click)="toggleDirector(director)" class="remove-chip">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"/>
+                <line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
+          </span>
+        }
+
+        <button (click)="clearAllFilters()" class="clear-filters-button">
+          Limpiar todo
+        </button>
+      </div>
+    }
+
+    <!-- Filter Panel -->
+    @if (showFilters()) {
+      <div class="filter-panel">
+        <div class="filter-columns">
+          <!-- Genre Filter -->
+          <div class="filter-column">
+            <h3 class="filter-title">Géneros</h3>
+            <div class="filter-options">
+              @for (genre of allGenres(); track genre) {
+                <label class="filter-option">
+                  <input
+                    type="checkbox"
+                    [checked]="selectedGenres().includes(genre)"
+                    (change)="toggleGenre(genre)"
+                    class="filter-checkbox"
+                  />
+                  <span class="filter-label">{{ genre }}</span>
+                </label>
+              }
+            </div>
+          </div>
+
+          <!-- Cast Filter -->
+          <div class="filter-column">
+            <h3 class="filter-title">Reparto</h3>
+            <div class="filter-options">
+              @for (actor of allCast(); track actor) {
+                <label class="filter-option">
+                  <input
+                    type="checkbox"
+                    [checked]="selectedCast().includes(actor)"
+                    (change)="toggleCast(actor)"
+                    class="filter-checkbox"
+                  />
+                  <span class="filter-label">{{ actor }}</span>
+                </label>
+              }
+            </div>
+          </div>
+
+          <!-- Director Filter -->
+          <div class="filter-column">
+            <h3 class="filter-title">Director</h3>
+            <div class="filter-options">
+              @for (director of allDirectors(); track director) {
+                <label class="filter-option">
+                  <input
+                    type="checkbox"
+                    [checked]="selectedDirectors().includes(director)"
+                    (change)="toggleDirector(director)"
+                    class="filter-checkbox"
+                  />
+                  <span class="filter-label">{{ director }}</span>
+                </label>
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- Results Count -->
+  <div class="results-info">
+    <p class="results-count">
+      Mostrando {{ filteredMovies().length }}
+      {{ filteredMovies().length === 1 ? 'película' : 'películas' }}
+    </p>
+  </div>
+
+  <!-- Movies Grid -->
+  @if (filteredMovies().length > 0) {
+    <div class="movies-grid">
+      @for (movie of filteredMovies(); track movie.movieId) {
+        <app-movie-card
+          [movie]="movie"
+          (movieClick)="onMovieClick(movie)">
+        </app-movie-card>
+      }
+    </div>
+  } @else {
+    <div class="empty-state">
+      <svg class="empty-icon" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <circle cx="11" cy="11" r="8"/>
+        <path d="m21 21-4.35-4.35"/>
+        <line x1="11" y1="8" x2="11" y2="14"/>
+        <line x1="8" y1="11" x2="14" y2="11"/>
+      </svg>
+      <p class="empty-title">No se encontraron películas</p>
+      <p class="empty-description">Intenta ajustar tus filtros de búsqueda</p>
+    </div>
+  }
+</div>

@@ -1,0 +1,244 @@
+@if (isLoading()) {
+  <div class="loading-container">
+    <div class="spinner"></div>
+    <p>Cargando película...</p>
+  </div>
+}
+
+@if (movie(); as movie) {
+  <div class="detail-container">
+    <!-- Back Button -->
+    <div class="back-section">
+      <button (click)="goBack()" class="back-button">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M19 12H5M12 19l-7-7 7-7"/>
+        </svg>
+        <span>Volver</span>
+      </button>
+    </div>
+
+    <div class="content-wrapper">
+      <!-- Header Section with Backdrop -->
+      <div class="header-section" [style.backgroundImage]="'url(' + movie.backdropPath + ')'">
+        <div class="header-overlay"></div>
+        <div class="header-content">
+          <!-- Poster -->
+          <div class="poster-wrapper">
+            <img [src]="movie.posterPath" [alt]="movie.title" class="poster-image" />
+          </div>
+
+          <!-- Main Info -->
+          <div class="main-info">
+            <!-- Title and Year -->
+            <h1 class="movie-title">{{ movie.title }}</h1>
+            <div class="metadata">
+              @if (movie.releaseDate) {
+                <div class="metadata-item">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                    <line x1="16" y1="2" x2="16" y2="6"/>
+                    <line x1="8" y1="2" x2="8" y2="6"/>
+                    <line x1="3" y1="10" x2="21" y2="10"/>
+                  </svg>
+                  <span>{{ getYear(movie.releaseDate) }}</span>
+                </div>
+              }
+              @if (movie.runtime) {
+                <div class="metadata-item">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <polyline points="12 6 12 12 16 14"/>
+                  </svg>
+                  <span>{{ movie.runtime }} min</span>
+                </div>
+              }
+            </div>
+
+            <!-- Rating Section -->
+            <div class="rating-section">
+              <div class="average-rating-card">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" class="star-icon">
+                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                </svg>
+                <div class="rating-info">
+                  <span class="rating-value">{{ movie.voteAverage?.toFixed(1) || 'N/A' }}/5</span>
+                  <span class="rating-label">Promedio ({{ movie.voteCount || 0 }} votos)</span>
+                </div>
+              </div>
+
+              <div class="user-rating-card">
+                <span class="user-rating-label">Tu calificación:</span>
+                <app-star-rating
+                  [rating]="userRating()"
+                  [readonly]="false"
+                  [size]="'lg'"
+                  (ratingChange)="onRatingChange($event)">
+                </app-star-rating>
+              </div>
+            </div>
+
+            <!-- Genres -->
+            <div class="genres-section">
+              <h3 class="section-subtitle">Géneros</h3>
+              <div class="genre-tags">
+                @for (genre of movie.genres; track genre) {
+                  <span class="genre-tag">{{ genre }}</span>
+                }
+              </div>
+            </div>
+
+            <!-- Overview -->
+            @if (movie.overview) {
+              <div class="overview-section">
+                <h3 class="section-subtitle">Sinopsis</h3>
+                <p class="overview-text">{{ movie.overview }}</p>
+              </div>
+            }
+
+            <!-- Director -->
+            @if (movie.director) {
+              <div class="director-section">
+                <h3 class="section-subtitle">Director</h3>
+                <p class="director-name">{{ movie.director }}</p>
+              </div>
+            }
+
+            <!-- Budget & Revenue -->
+            @if (movie.budget || movie.revenue) {
+              <div class="financial-section">
+                <h3 class="section-subtitle">Información Financiera</h3>
+                <div class="financial-grid">
+                  @if (movie.budget) {
+                    <div class="financial-item">
+                      <span class="financial-label">Presupuesto:</span>
+                      <span class="financial-value">{{ formatCurrency(movie.budget) }}</span>
+                    </div>
+                  }
+                  @if (movie.revenue) {
+                    <div class="financial-item">
+                      <span class="financial-label">Recaudación:</span>
+                      <span class="financial-value">{{ formatCurrency(movie.revenue) }}</span>
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+
+            <!-- External Links -->
+            <div class="external-links-section">
+              <h3 class="section-subtitle">Enlaces Externos</h3>
+              <div class="external-links">
+                @if (movie.movieLensId) {
+                  <a [href]="getMovieLensUrl(movie.movieLensId)" target="_blank" rel="noopener noreferrer" class="external-link movielens">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                      <polyline points="15 3 21 3 21 9"/>
+                      <line x1="10" y1="14" x2="21" y2="3"/>
+                    </svg>
+                    <span>MovieLens</span>
+                  </a>
+                }
+                @if (movie.imdbId) {
+                  <a [href]="getImdbUrl(movie.imdbId)" target="_blank" rel="noopener noreferrer" class="external-link imdb">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                      <polyline points="15 3 21 3 21 9"/>
+                      <line x1="10" y1="14" x2="21" y2="3"/>
+                    </svg>
+                    <span>IMDb</span>
+                  </a>
+                }
+                @if (movie.tmdbId) {
+                  <a [href]="getTmdbUrl(movie.tmdbId)" target="_blank" rel="noopener noreferrer" class="external-link tmdb">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                      <polyline points="15 3 21 3 21 9"/>
+                      <line x1="10" y1="14" x2="21" y2="3"/>
+                    </svg>
+                    <span>TMDb</span>
+                  </a>
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cast Section -->
+      @if (movie.cast && movie.cast.length > 0) {
+        <section class="cast-section">
+          <h2 class="section-title">Reparto</h2>
+          <div class="cast-grid">
+            @for (actor of movie.cast; track actor) {
+              <div class="cast-card">
+                <div class="cast-avatar">
+                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                  </svg>
+                </div>
+                <h3 class="cast-name">{{ actor }}</h3>
+              </div>
+            }
+          </div>
+        </section>
+      }
+
+      <!-- Tags Section -->
+      @if ((movie.genomeTags && movie.genomeTags.length > 0) || (movie.userTags && movie.userTags.length > 0)) {
+        <section class="tags-section">
+          <h2 class="section-title">Etiquetas</h2>
+
+          @if (movie.genomeTags && movie.genomeTags.length > 0) {
+            <div class="tags-subsection">
+              <h3 class="tags-subtitle">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
+                  <line x1="7" y1="7" x2="7.01" y2="7"/>
+                </svg>
+                Genome Tags
+              </h3>
+              <div class="tags-container genome-tags">
+                @for (tag of movie.genomeTags; track tag) {
+                  <span class="tag-chip genome-tag">{{ tag }}</span>
+                }
+              </div>
+            </div>
+          }
+
+          @if (movie.userTags && movie.userTags.length > 0) {
+            <div class="tags-subsection">
+              <h3 class="tags-subtitle">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                  <circle cx="12" cy="7" r="4"/>
+                </svg>
+                User Tags
+              </h3>
+              <div class="tags-container user-tags">
+                @for (tag of movie.userTags; track tag) {
+                  <span class="tag-chip user-tag">{{ tag }}</span>
+                }
+              </div>
+            </div>
+          }
+        </section>
+      }
+
+      <!-- Similar Movies Carousel -->
+      @if (similarMovies().length > 0) {
+        <section class="similar-movies-section">
+          <h2 class="section-title">Películas similares</h2>
+          <div class="similar-movies-carousel">
+            @for (similarMovie of similarMovies(); track similarMovie.movieId) {
+              <app-movie-card
+                [movie]="similarMovie"
+                (movieClick)="onSimilarMovieClick(similarMovie)">
+              </app-movie-card>
+            }
+          </div>
+        </section>
+      }
+    </div>
+  </div>
+}

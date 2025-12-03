@@ -34,25 +34,40 @@ export class AuthService {
   isAuthenticated = computed(() => this.currentUser() !== null);
   isAdmin = computed(() => this.currentUser()?.role === 'admin');
 
-  // Mock database
+  // Mock database - USUARIOS DE PRUEBA
+  // ⭐ Para Login: usa email + password de abajo
   private mockUsers: User[] = [
     {
       userId: 1,
       email: 'admin@movies.com',
       role: 'admin',
-      createdAt: new Date('2025-01-01')
+      createdAt: new Date('2024-01-01')
     },
     {
       userId: 2,
       email: 'user@movies.com',
       role: 'user',
-      createdAt: new Date('2025-01-02')
+      createdAt: new Date('2024-01-15')
+    },
+    {
+      userId: 3,
+      email: 'john.doe@movies.com',
+      role: 'user',
+      createdAt: new Date('2024-02-10')
+    },
+    {
+      userId: 4,
+      email: 'jane.smith@movies.com',
+      role: 'user',
+      createdAt: new Date('2024-03-05')
     }
   ];
 
   private mockPasswords = new Map([
-    ['admin@movies.com', 'admin123'],
-    ['user@movies.com', 'user123']
+    ['admin@movies.com', 'admin123'],      // 🔑 ADMIN
+    ['user@movies.com', 'user123'],        // 🔑 USER regular
+    ['john.doe@movies.com', 'password123'],// 🔑 USER John
+    ['jane.smith@movies.com', 'password123'] // 🔑 USER Jane
   ]);
 
   constructor(private http: HttpClient) {
