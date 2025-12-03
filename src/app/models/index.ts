@@ -12,6 +12,9 @@ export * from './user.model';
 // Movie models
 export * from './movie.model';
 
+// Movie Request models
+export * from './movie-request.model';
+
 // Rating models
 export * from './rating.model';
 
@@ -20,6 +23,9 @@ export * from './recommendation.model';
 
 // Similarity models
 export * from './similarity.model';
+
+// Admin models
+export * from './admin.model';
 
 // API Response types
 export interface ApiError {

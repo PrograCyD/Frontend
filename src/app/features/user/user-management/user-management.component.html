@@ -1,0 +1,359 @@
+<div class="user-management-container">
+  <header class="header">
+    <h1>🛠️ Mis Gestiones</h1>
+    <p class="subtitle">Administra tus solicitudes y calificaciones</p>
+  </header>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button
+      class="tab-button"
+      [class.active]="activeTab() === 'requests'"
+      (click)="setActiveTab('requests')">
+      📝 Solicitudes de Películas
+    </button>
+    <button
+      class="tab-button"
+      [class.active]="activeTab() === 'ratings'"
+      (click)="setActiveTab('ratings')">
+      ⭐ Mis Calificaciones
+    </button>
+  </div>
+
+  <!-- REQUESTS TAB -->
+  @if (activeTab() === 'requests') {
+    <div class="tab-content">
+      <div class="section-header">
+        <h2>Solicitudes de Películas</h2>
+        <button class="btn-primary" (click)="toggleRequestForm()">
+          {{ showRequestForm() ? '❌ Cancelar' : '➕ Nueva Solicitud' }}
+        </button>
+      </div>
+
+      <!-- Request Form -->
+      @if (showRequestForm()) {
+        <div class="request-form-card">
+          <h3>{{ requestForm().requestType === 'add' ? 'Agregar Nueva Película' : 'Editar Película' }}</h3>
+
+          <form (ngSubmit)="submitMovieRequest()">
+            <div class="form-row">
+              <div class="form-group">
+                <label>Tipo de Solicitud</label>
+                <select [(ngModel)]="requestForm().requestType" name="requestType" class="form-control">
+                  <option value="add">Agregar nueva película</option>
+                  <option value="edit">Editar película existente</option>
+                </select>
+              </div>
+
+              @if (requestForm().requestType === 'edit') {
+                <div class="form-group">
+                  <label>ID de Película</label>
+                  <input
+                    type="number"
+                    [(ngModel)]="requestForm().movieId"
+                    name="movieId"
+                    class="form-control"
+                    placeholder="ID de la película a editar"
+                    required>
+                </div>
+              }
+            </div>
+
+            <div class="form-group">
+              <label>Título *</label>
+              <input
+                type="text"
+                [(ngModel)]="requestForm().title"
+                name="title"
+                class="form-control"
+                placeholder="Título de la película"
+                required>
+            </div>
+
+            <div class="form-group">
+              <label>Año *</label>
+              <input
+                type="number"
+                [(ngModel)]="requestForm().year"
+                name="year"
+                class="form-control"
+                min="1800"
+                [max]="2100"
+                required>
+            </div>
+
+            <div class="form-group">
+              <label>Géneros * (Selecciona al menos uno)</label>
+              <div class="genres-grid">
+                @for (genre of availableGenres; track genre) {
+                  <label class="genre-checkbox">
+                    <input
+                      type="checkbox"
+                      [checked]="requestForm().genres.includes(genre)"
+                      (change)="toggleGenre(genre)">
+                    <span>{{ genre }}</span>
+                  </label>
+                }
+              </div>
+            </div>
+
+            <div class="form-section">
+              <h4>Enlaces Externos</h4>
+              <div class="form-group">
+                <label>MovieLens Link</label>
+                <input
+                  type="text"
+                  [(ngModel)]="requestForm().movieLensLink"
+                  name="movieLensLink"
+                  class="form-control"
+                  placeholder="https://movielens.org/movies/...">
+              </div>
+              <div class="form-group">
+                <label>IMDB Link</label>
+                <input
+                  type="text"
+                  [(ngModel)]="requestForm().imdbLink"
+                  name="imdbLink"
+                  class="form-control"
+                  placeholder="https://www.imdb.com/title/tt...">
+              </div>
+              <div class="form-group">
+                <label>TMDB Link</label>
+                <input
+                  type="text"
+                  [(ngModel)]="requestForm().tmdbLink"
+                  name="tmdbLink"
+                  class="form-control"
+                  placeholder="https://www.themoviedb.org/movie/...">
+              </div>
+            </div>
+
+            <div class="form-section">
+              <h4>Tags</h4>
+              <div class="form-group">
+                <label>Genome Tags (separados por comas)</label>
+                <input
+                  type="text"
+                  [(ngModel)]="requestForm().genomeTags"
+                  name="genomeTags"
+                  class="form-control"
+                  placeholder="action, thriller, suspense">
+              </div>
+              <div class="form-group">
+                <label>User Tags (separados por comas)</label>
+                <input
+                  type="text"
+                  [(ngModel)]="requestForm().userTags"
+                  name="userTags"
+                  class="form-control"
+                  placeholder="must watch, award winner">
+              </div>
+            </div>
+
+            <div class="form-section">
+              <h4>Importar Datos (Opcional)</h4>
+              <div class="form-group">
+                <label>API Link de TMDB</label>
+                <input
+                  type="text"
+                  [(ngModel)]="requestForm().apiLink"
+                  name="apiLink"
+                  class="form-control"
+                  placeholder="https://api.themoviedb.org/3/movie/...">
+                <small>Para extraer automáticamente la información de la película</small>
+              </div>
+              <div class="form-group">
+                <label>O importar JSON directamente</label>
+                <textarea
+                  [(ngModel)]="requestForm().jsonData"
+                  name="jsonData"
+                  class="form-control"
+                  rows="6"
+                  placeholder='{"title": "Movie Name", "year": 2024, ...}'></textarea>
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <button type="button" class="btn-secondary" (click)="toggleRequestForm()">
+                Cancelar
+              </button>
+              <button type="submit" class="btn-primary" [disabled]="isSubmitting()">
+                {{ isSubmitting() ? 'Enviando...' : 'Enviar Solicitud' }}
+              </button>
+            </div>
+          </form>
+        </div>
+      }
+
+      <!-- Requests List -->
+      <div class="requests-list">
+        @if (isLoadingRequests()) {
+          <div class="loading">Cargando solicitudes...</div>
+        } @else if (myRequests().length === 0) {
+          <div class="empty-state">
+            <p>No tienes solicitudes aún</p>
+          </div>
+        } @else {
+          @for (request of myRequests(); track request.requestId) {
+            <div class="request-card">
+              <div class="request-header">
+                <h3>{{ request.movieData.title }}</h3>
+                <span class="badge" [ngClass]="getStatusBadgeClass(request.status)">
+                  {{ getStatusText(request.status) }}
+                </span>
+              </div>
+              <div class="request-details">
+                <p><strong>Tipo:</strong> {{ request.requestType === 'add' ? 'Agregar' : 'Editar' }}</p>
+                <p><strong>Año:</strong> {{ request.movieData.year }}</p>
+                <p><strong>Géneros:</strong> {{ request.movieData.genres.join(', ') }}</p>
+                <p><strong>Fecha:</strong> {{ request.createdAt }}</p>
+                @if (request.reviewNote) {
+                  <p class="review-note"><strong>Nota del revisor:</strong> {{ request.reviewNote }}</p>
+                }
+              </div>
+            </div>
+          }
+        }
+      </div>
+    </div>
+  }
+
+  <!-- RATINGS TAB -->
+  @if (activeTab() === 'ratings') {
+    <div class="tab-content">
+      <div class="section-header">
+        <h2>Mis Calificaciones</h2>
+        <p class="rating-count">Total: {{ ratingsTotal() }}</p>
+      </div>
+
+      <!-- Filters -->
+      <div class="filters-card">
+        <div class="filter-row">
+          <div class="filter-group">
+            <label>Buscar película</label>
+            <input
+              type="text"
+              [(ngModel)]="ratingsFilter().search"
+              (ngModelChange)="onRatingFilterChange()"
+              class="form-control"
+              placeholder="Buscar por título...">
+          </div>
+          <div class="filter-group">
+            <label>Rating mínimo</label>
+            <select
+              [(ngModel)]="ratingsFilter().minRating"
+              (ngModelChange)="onRatingFilterChange()"
+              class="form-control">
+              <option [value]="0">Todos</option>
+              <option [value]="1">⭐ 1+</option>
+              <option [value]="2">⭐ 2+</option>
+              <option [value]="3">⭐ 3+</option>
+              <option [value]="4">⭐ 4+</option>
+              <option [value]="5">⭐ 5</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Ratings Table -->
+      @if (isLoadingRatings()) {
+        <div class="loading">Cargando calificaciones...</div>
+      } @else if (myRatings().length === 0) {
+        <div class="empty-state">
+          <p>No tienes calificaciones aún</p>
+        </div>
+      } @else {
+        <div class="table-responsive">
+          <table class="ratings-table">
+            <thead>
+              <tr>
+                <th>Película</th>
+                <th>Géneros</th>
+                <th>Mi Calificación</th>
+                <th>Fecha</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (rating of paginatedRatings(); track rating.movieId) {
+                <tr>
+                  <td>
+                    <div class="movie-cell">
+                      @if (rating.movie?.posterPath) {
+                        <img [src]="rating.movie?.posterPath" [alt]="rating.movie?.title" class="mini-poster">
+                      }
+                      <span>{{ rating.movie?.title || 'Película ' + rating.movieId }}</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="genres-cell">
+                      @for (genre of (rating.movie?.genres || []).slice(0, 2); track genre) {
+                        <span class="genre-tag">{{ genre }}</span>
+                      }
+                    </div>
+                  </td>
+                  <td>
+                    @if (editingRating() === rating.movieId) {
+                      <div class="rating-editor">
+                        <app-star-rating
+                          [rating]="editRatingValue()"
+                          [readonly]="false"
+                          (ratingChange)="editRatingValue.set($event)">
+                        </app-star-rating>
+                      </div>
+                    } @else {
+                      <app-star-rating [rating]="rating.rating" [readonly]="true"></app-star-rating>
+                    }
+                  </td>
+                  <td>{{ formatDate(rating.timestamp) }}</td>
+                  <td>
+                    <div class="actions-cell">
+                      @if (editingRating() === rating.movieId) {
+                        <button class="btn-small btn-success" (click)="saveRating(rating.movieId)">
+                          ✓
+                        </button>
+                        <button class="btn-small btn-secondary" (click)="cancelEditRating()">
+                          ✕
+                        </button>
+                      } @else {
+                        <button
+                          class="btn-small btn-edit"
+                          (click)="startEditRating(rating.movieId, rating.rating)">
+                          ✏️
+                        </button>
+                        <button
+                          class="btn-small btn-delete"
+                          (click)="deleteRating(rating.movieId)">
+                          🗑️
+                        </button>
+                      }
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination -->
+        <div class="pagination">
+          <button
+            class="btn-pagination"
+            (click)="previousPage()"
+            [disabled]="ratingsPage() === 0">
+            ← Anterior
+          </button>
+          <span class="pagination-info">
+            Página {{ ratingsPage() + 1 }} de {{ totalPages() }}
+          </span>
+          <button
+            class="btn-pagination"
+            (click)="nextPage()"
+            [disabled]="ratingsPage() >= totalPages() - 1">
+            Siguiente →
+          </button>
+        </div>
+      }
+    </div>
+  }
+</div>

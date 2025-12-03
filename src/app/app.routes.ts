@@ -40,14 +40,14 @@ export const routes: Routes = [
         loadComponent: () => import('./features/movies/movie-detail/movie-detail.component').then(m => m.MovieDetailComponent)
       },
       {
-        path: 'recommendations',
+        path: 'management',
         canActivate: [authGuard],
-        loadComponent: () => import('./features/recommendations/recommendations.component').then(m => m.RecommendationsComponent)
+        loadComponent: () => import('./features/user/user-management/user-management.component').then(m => m.UserManagementComponent)
       },
       {
-        path: 'admin',
+        path: 'admin/management',
         canActivate: [adminGuard],
-        loadComponent: () => import('./features/admin/admin-panel.component').then(m => m.AdminPanelComponent)
+        loadComponent: () => import('./features/admin/admin-management/admin-management.component').then(m => m.AdminManagementComponent)
       },
       {
         path: 'profile',

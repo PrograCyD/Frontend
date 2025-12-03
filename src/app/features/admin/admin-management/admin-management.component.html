@@ -1,0 +1,550 @@
+<div class="admin-management-container">
+  <header class="header">
+    <h1>⚙️ Panel de Administración</h1>
+    <p class="subtitle">Gestiona películas, calificaciones y base de datos</p>
+  </header>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button
+      class="tab-button"
+      [class.active]="activeTab() === 'movies'"
+      (click)="setActiveTab('movies')">
+      🎬 Películas
+    </button>
+    <button
+      class="tab-button"
+      [class.active]="activeTab() === 'ratings'"
+      (click)="setActiveTab('ratings')">
+      ⭐ Calificaciones
+    </button>
+    <button
+      class="tab-button"
+      [class.active]="activeTab() === 'remap'"
+      (click)="setActiveTab('remap')">
+      🗄️ Remapeo BD
+    </button>
+  </div>
+
+  <!-- MOVIES TAB -->
+  @if (activeTab() === 'movies') {
+    <div class="tab-content">
+      <div class="section-header">
+        <h2>Gestión de Películas</h2>
+        <button class="btn-primary" (click)="openAddMovieForm()">
+          ➕ Agregar Película
+        </button>
+      </div>
+
+      <!-- Filters -->
+      <div class="filters-card">
+        <div class="filter-grid">
+          <div class="filter-group">
+            <label>Buscar</label>
+            <input
+              type="text"
+              [(ngModel)]="moviesFilters().search"
+              (ngModelChange)="onMoviesFilterChange()"
+              class="form-control"
+              placeholder="Buscar por título...">
+          </div>
+          <div class="filter-group">
+            <label>Género</label>
+            <select
+              [(ngModel)]="moviesFilters().genre"
+              (ngModelChange)="onMoviesFilterChange()"
+              class="form-control">
+              <option value="">Todos</option>
+              @for (genre of availableGenres; track genre) {
+                <option [value]="genre">{{ genre }}</option>
+              }
+            </select>
+          </div>
+          <div class="filter-group">
+            <label>Ordenar por</label>
+            <select
+              [(ngModel)]="moviesFilters().sortBy"
+              (ngModelChange)="onMoviesFilterChange()"
+              class="form-control">
+              <option value="title">Título</option>
+              <option value="year">Año</option>
+              <option value="rating">Rating</option>
+              <option value="popularity">Popularidad</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label>Orden</label>
+            <select
+              [(ngModel)]="moviesFilters().sortOrder"
+              (ngModelChange)="onMoviesFilterChange()"
+              class="form-control">
+              <option value="asc">Ascendente</option>
+              <option value="desc">Descendente</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Movie Form -->
+      @if (showMovieForm()) {
+        <div class="form-modal-overlay" (click)="showMovieForm.set(false)">
+          <div class="form-modal" (click)="$event.stopPropagation()">
+            <h3>{{ isEditingMovie() ? 'Editar Película' : 'Agregar Nueva Película' }}</h3>
+
+            <form (ngSubmit)="submitMovieForm()">
+              <div class="form-scroll">
+                <div class="form-group">
+                  <label>Título *</label>
+                  <input
+                    type="text"
+                    [(ngModel)]="movieForm().title"
+                    name="title"
+                    class="form-control"
+                    placeholder="Título de la película"
+                    required>
+                </div>
+
+                <div class="form-group">
+                  <label>Año *</label>
+                  <input
+                    type="number"
+                    [(ngModel)]="movieForm().year"
+                    name="year"
+                    class="form-control"
+                    min="1800"
+                    [max]="2100"
+                    required>
+                </div>
+
+                <div class="form-group">
+                  <label>Géneros * (Selecciona al menos uno)</label>
+                  <div class="genres-grid">
+                    @for (genre of availableGenres; track genre) {
+                      <label class="genre-checkbox">
+                        <input
+                          type="checkbox"
+                          [checked]="movieForm().genres.includes(genre)"
+                          (change)="toggleMovieGenre(genre)">
+                        <span>{{ genre }}</span>
+                      </label>
+                    }
+                  </div>
+                </div>
+
+                <div class="form-section">
+                  <h4>Enlaces Externos</h4>
+                  <div class="form-group">
+                    <label>MovieLens Link</label>
+                    <input
+                      type="text"
+                      [(ngModel)]="movieForm().movieLensLink"
+                      name="movieLensLink"
+                      class="form-control"
+                      placeholder="https://movielens.org/movies/...">
+                  </div>
+                  <div class="form-group">
+                    <label>IMDB Link</label>
+                    <input
+                      type="text"
+                      [(ngModel)]="movieForm().imdbLink"
+                      name="imdbLink"
+                      class="form-control"
+                      placeholder="https://www.imdb.com/title/tt...">
+                  </div>
+                  <div class="form-group">
+                    <label>TMDB Link</label>
+                    <input
+                      type="text"
+                      [(ngModel)]="movieForm().tmdbLink"
+                      name="tmdbLink"
+                      class="form-control"
+                      placeholder="https://www.themoviedb.org/movie/...">
+                  </div>
+                </div>
+
+                <div class="form-section">
+                  <h4>Tags</h4>
+                  <div class="form-group">
+                    <label>Genome Tags (separados por comas)</label>
+                    <input
+                      type="text"
+                      [(ngModel)]="movieForm().genomeTags"
+                      name="genomeTags"
+                      class="form-control"
+                      placeholder="action, thriller, suspense">
+                  </div>
+                  <div class="form-group">
+                    <label>User Tags (separados por comas)</label>
+                    <input
+                      type="text"
+                      [(ngModel)]="movieForm().userTags"
+                      name="userTags"
+                      class="form-control"
+                      placeholder="must watch, award winner">
+                  </div>
+                </div>
+
+                <div class="form-section">
+                  <h4>Importar Datos (Opcional)</h4>
+                  <div class="form-group">
+                    <label>API Link de TMDB</label>
+                    <input
+                      type="text"
+                      [(ngModel)]="movieForm().apiLink"
+                      name="apiLink"
+                      class="form-control"
+                      placeholder="https://api.themoviedb.org/3/movie/...">
+                    <small>Para extraer automáticamente la información de la película</small>
+                  </div>
+                  <div class="form-group">
+                    <label>O importar JSON directamente</label>
+                    <textarea
+                      [(ngModel)]="movieForm().jsonData"
+                      name="jsonData"
+                      class="form-control"
+                      rows="6"
+                      placeholder='{"title": "Movie Name", "year": 2024, ...}'></textarea>
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-actions">
+                <button type="button" class="btn-secondary" (click)="showMovieForm.set(false)">
+                  Cancelar
+                </button>
+                <button type="submit" class="btn-primary" [disabled]="isSubmitting()">
+                  {{ isSubmitting() ? 'Guardando...' : 'Guardar' }}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      }
+
+      <!-- Movies Table -->
+      @if (isLoadingMovies()) {
+        <div class="loading">Cargando películas...</div>
+      } @else {
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Título</th>
+                <th>Año</th>
+                <th>Géneros</th>
+                <th>Rating</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (movie of movies(); track movie.movieId) {
+                <tr>
+                  <td>{{ movie.movieId }}</td>
+                  <td>
+                    <div class="movie-cell">
+                      @if (movie.posterPath) {
+                        <img [src]="movie.posterPath" [alt]="movie.title" class="mini-poster">
+                      }
+                      <span>{{ movie.title }}</span>
+                    </div>
+                  </td>
+                  <td>{{ movie.releaseDate ? (movie.releaseDate | slice:0:4) : 'N/A' }}</td>
+                  <td>
+                    <div class="genres-cell">
+                      @for (genre of movie.genres.slice(0, 2); track genre) {
+                        <span class="genre-tag">{{ genre }}</span>
+                      }
+                    </div>
+                  </td>
+                  <td>{{ movie.voteAverage?.toFixed(1) || 'N/A' }}</td>
+                  <td>
+                    <div class="actions-cell">
+                      <button class="btn-small btn-edit" (click)="openEditMovieForm(movie)">
+                        ✏️
+                      </button>
+                      <button class="btn-small btn-delete" (click)="deleteMovie(movie.movieId, movie.title)">
+                        🗑️
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination -->
+        <div class="pagination">
+          <button
+            class="btn-pagination"
+            (click)="previousMoviesPage()"
+            [disabled]="moviesPage() === 0">
+            ← Anterior
+          </button>
+          <span class="pagination-info">
+            Página {{ moviesPage() + 1 }} de {{ moviesTotalPages() }} ({{ moviesTotal() }} total)
+          </span>
+          <button
+            class="btn-pagination"
+            (click)="nextMoviesPage()"
+            [disabled]="moviesPage() >= moviesTotalPages() - 1">
+            Siguiente →
+          </button>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- RATINGS TAB -->
+  @if (activeTab() === 'ratings') {
+    <div class="tab-content">
+      <div class="section-header">
+        <h2>Gestión de Calificaciones</h2>
+        <button class="btn-primary" (click)="openAddRatingForm()">
+          ➕ Agregar Calificación
+        </button>
+      </div>
+
+      <!-- Filters -->
+      <div class="filters-card">
+        <div class="filter-grid">
+          <div class="filter-group">
+            <label>Usuario</label>
+            <select
+              [(ngModel)]="ratingsFilters().userId"
+              (ngModelChange)="onRatingsFilterChange()"
+              class="form-control">
+              <option [value]="undefined">Todos</option>
+              @for (user of availableUsers; track user.userId) {
+                <option [value]="user.userId">{{ user.firstName }} {{ user.lastName }}</option>
+              }
+            </select>
+          </div>
+          <div class="filter-group">
+            <label>Película</label>
+            <select
+              [(ngModel)]="ratingsFilters().movieId"
+              (ngModelChange)="onRatingsFilterChange()"
+              class="form-control">
+              <option [value]="undefined">Todas</option>
+              @for (movie of availableMovies().slice(0, 50); track movie.movieId) {
+                <option [value]="movie.movieId">{{ movie.title }}</option>
+              }
+            </select>
+          </div>
+          <div class="filter-group">
+            <label>Rating mínimo</label>
+            <select
+              [(ngModel)]="ratingsFilters().minRating"
+              (ngModelChange)="onRatingsFilterChange()"
+              class="form-control">
+              <option [value]="0">Todos</option>
+              <option [value]="1">⭐ 1+</option>
+              <option [value]="2">⭐ 2+</option>
+              <option [value]="3">⭐ 3+</option>
+              <option [value]="4">⭐ 4+</option>
+              <option [value]="5">⭐ 5</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Rating Form -->
+      @if (showRatingForm()) {
+        <div class="form-modal-overlay" (click)="showRatingForm.set(false)">
+          <div class="form-modal small" (click)="$event.stopPropagation()">
+            <h3>{{ isEditingRating() ? 'Editar Calificación' : 'Agregar Calificación' }}</h3>
+
+            <form (ngSubmit)="submitRatingForm()">
+              <div class="form-group">
+                <label>Usuario *</label>
+                <select
+                  [(ngModel)]="ratingForm().userId"
+                  name="userId"
+                  class="form-control"
+                  [disabled]="isEditingRating()"
+                  required>
+                  @for (user of availableUsers; track user.userId) {
+                    <option [value]="user.userId">{{ user.firstName }} {{ user.lastName }}</option>
+                  }
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label>Película *</label>
+                <select
+                  [(ngModel)]="ratingForm().movieId"
+                  name="movieId"
+                  class="form-control"
+                  [disabled]="isEditingRating()"
+                  required>
+                  @for (movie of availableMovies(); track movie.movieId) {
+                    <option [value]="movie.movieId">{{ movie.title }}</option>
+                  }
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label>Calificación * (0.5 - 5.0)</label>
+                <input
+                  type="number"
+                  [(ngModel)]="ratingForm().rating"
+                  name="rating"
+                  class="form-control"
+                  min="0.5"
+                  max="5"
+                  step="0.5"
+                  required>
+                <div class="rating-preview">
+                  <app-star-rating [rating]="ratingForm().rating"></app-star-rating>
+                </div>
+              </div>
+
+              <div class="form-actions">
+                <button type="button" class="btn-secondary" (click)="showRatingForm.set(false)">
+                  Cancelar
+                </button>
+                <button type="submit" class="btn-primary" [disabled]="isSubmitting()">
+                  {{ isSubmitting() ? 'Guardando...' : 'Guardar' }}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      }
+
+      <!-- Ratings Table -->
+      @if (isLoadingRatings()) {
+        <div class="loading">Cargando calificaciones...</div>
+      } @else {
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Usuario</th>
+                <th>Película</th>
+                <th>Calificación</th>
+                <th>Fecha</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (rating of ratings(); track rating.userId + '-' + rating.movieId) {
+                <tr>
+                  <td>{{ rating.userName || getUserName(rating.userId) }}</td>
+                  <td>{{ rating.movieTitle || getMovieTitle(rating.movieId) }}</td>
+                  <td>
+                    <app-star-rating [rating]="rating.rating"></app-star-rating>
+                  </td>
+                  <td>{{ formatDate(rating.timestamp) }}</td>
+                  <td>
+                    <div class="actions-cell">
+                      <button class="btn-small btn-edit" (click)="openEditRatingForm(rating)">
+                        ✏️
+                      </button>
+                      <button
+                        class="btn-small btn-delete"
+                        (click)="deleteRating(rating.userId, rating.movieId, rating.userName || getUserName(rating.userId), rating.movieTitle || getMovieTitle(rating.movieId))">
+                        🗑️
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination -->
+        <div class="pagination">
+          <button
+            class="btn-pagination"
+            (click)="previousRatingsPage()"
+            [disabled]="ratingsPage() === 0">
+            ← Anterior
+          </button>
+          <span class="pagination-info">
+            Página {{ ratingsPage() + 1 }} de {{ ratingsTotalPages() }} ({{ ratingsTotal() }} total)
+          </span>
+          <button
+            class="btn-pagination"
+            (click)="nextRatingsPage()"
+            [disabled]="ratingsPage() >= ratingsTotalPages() - 1">
+            Siguiente →
+          </button>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- REMAP TAB -->
+  @if (activeTab() === 'remap') {
+    <div class="tab-content">
+      <div class="remap-container">
+        <h2>🗄️ Remapeo de Base de Datos</h2>
+
+        <div class="remap-info">
+          <h3>¿Qué hace el remapeo?</h3>
+          <ul>
+            <li>Reorganiza y optimiza los índices de la base de datos</li>
+            <li>Recalcula las similitudes entre películas</li>
+            <li>Actualiza las estadísticas de calificaciones</li>
+            <li>Limpia datos inconsistentes o huérfanos</li>
+          </ul>
+
+          <div class="warning-box">
+            <strong>⚠️ Advertencia:</strong>
+            <p>Este proceso puede tardar varios minutos dependiendo del tamaño de la base de datos. Durante el remapeo, el sistema puede experimentar lentitud.</p>
+          </div>
+        </div>
+
+        @if (!remapResult()) {
+          <div class="remap-action">
+            <button
+              class="btn-danger"
+              (click)="confirmRemap()"
+              [disabled]="isRemapping()">
+              {{ isRemapping() ? '⏳ Remapeando...' : '🔄 Iniciar Remapeo' }}
+            </button>
+          </div>
+        }
+
+        @if (isRemapping()) {
+          <div class="remap-progress">
+            <div class="spinner"></div>
+            <p>Remapeando base de datos... Por favor espera.</p>
+          </div>
+        }
+
+        @if (remapResult()) {
+          <div class="remap-result" [class.success]="remapResult()!.success" [class.error]="!remapResult()!.success">
+            <h3>{{ remapResult()!.success ? '✅ Remapeo Exitoso' : '❌ Error en Remapeo' }}</h3>
+            <p>{{ remapResult()!.message }}</p>
+
+            @if (remapResult()!.affectedMovies !== undefined) {
+              <div class="result-stats">
+                <div class="stat">
+                  <span class="label">Películas afectadas:</span>
+                  <span class="value">{{ remapResult()!.affectedMovies }}</span>
+                </div>
+                <div class="stat">
+                  <span class="label">Calificaciones afectadas:</span>
+                  <span class="value">{{ remapResult()!.affectedRatings }}</span>
+                </div>
+                <div class="stat">
+                  <span class="label">Duración:</span>
+                  <span class="value">{{ remapResult()!.duration! / 1000 }} segundos</span>
+                </div>
+              </div>
+            }
+
+            <button class="btn-primary" (click)="remapResult.set(null)">
+              Realizar Otro Remapeo
+            </button>
+          </div>
+        }
+      </div>
+    </div>
+  }
+</div>
