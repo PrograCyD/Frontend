@@ -20,6 +20,15 @@
     </button>
     <button
       class="tab-button"
+      [class.active]="activeTab() === 'requests'"
+      (click)="setActiveTab('requests')">
+      📥 Solicitudes
+      @if (pendingRequestsCount() > 0) {
+        <span class="badge">{{ pendingRequestsCount() }}</span>
+      }
+    </button>
+    <button
+      class="tab-button"
       [class.active]="activeTab() === 'remap'"
       (click)="setActiveTab('remap')">
       🗄️ Remapeo BD
@@ -243,13 +252,13 @@
                   <td>{{ movie.movieId }}</td>
                   <td>
                     <div class="movie-cell">
-                      @if (movie.posterPath) {
-                        <img [src]="movie.posterPath" [alt]="movie.title" class="mini-poster">
+                      @if (movie.externalData?.posterUrl) {
+                        <img [src]="movie.externalData!.posterUrl" [alt]="movie.title" class="mini-poster">
                       }
                       <span>{{ movie.title }}</span>
                     </div>
                   </td>
-                  <td>{{ movie.releaseDate ? (movie.releaseDate | slice:0:4) : 'N/A' }}</td>
+                  <td>{{ movie.year || 'N/A' }}</td>
                   <td>
                     <div class="genres-cell">
                       @for (genre of movie.genres.slice(0, 2); track genre) {
@@ -257,7 +266,7 @@
                       }
                     </div>
                   </td>
-                  <td>{{ movie.voteAverage?.toFixed(1) || 'N/A' }}</td>
+                  <td>{{ movie.ratingStats?.average?.toFixed(1) || 'N/A' }}</td>
                   <td>
                     <div class="actions-cell">
                       <button class="btn-small btn-edit" (click)="openEditMovieForm(movie)">
@@ -475,6 +484,247 @@
           </button>
         </div>
       }
+    </div>
+  }
+
+  <!-- REQUESTS TAB -->
+  @if (activeTab() === 'requests') {
+    <div class="tab-content">
+      <h2>📋 Gestión de Solicitudes</h2>
+
+      <!-- Filters -->
+      <div class="requests-filters">
+        <button
+          [class.active]="requestsFilter() === 'pending'"
+          (click)="setRequestsFilter('pending')">
+          ⏳ Pendientes
+          @if (pendingRequestsCount() > 0) {
+            <span class="badge">{{ pendingRequestsCount() }}</span>
+          }
+        </button>
+        <button
+          [class.active]="requestsFilter() === 'approved'"
+          (click)="setRequestsFilter('approved')">
+          ✅ Aprobadas
+        </button>
+        <button
+          [class.active]="requestsFilter() === 'rejected'"
+          (click)="setRequestsFilter('rejected')">
+          ❌ Rechazadas
+        </button>
+        <button
+          [class.active]="requestsFilter() === 'all'"
+          (click)="setRequestsFilter('all')">
+          📊 Todas
+        </button>
+      </div>
+
+      <!-- Requests Table -->
+      @if (filteredRequests().length > 0) {
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Usuario</th>
+                <th>Tipo</th>
+                <th>Película</th>
+                <th>Estado</th>
+                <th>Fecha</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (request of filteredRequests(); track request.requestId) {
+                <tr>
+                  <td>{{ request.requestId }}</td>
+                  <td>
+                    <div class="user-info">
+                      <strong>ID: {{ request.userId }}</strong>
+                    </div>
+                  </td>
+                  <td>
+                    <span [class]="'request-type ' + request.requestType">
+                      {{ request.requestType === 'add' ? '➕ Agregar' : '✏️ Editar' }}
+                    </span>
+                  </td>
+                  <td>
+                    <div class="movie-info">
+                      <strong>{{ request.movieData.title }}</strong>
+                      @if (request.movieData.year) {
+                        <span class="year">({{ request.movieData.year }})</span>
+                      }
+                      @if (request.movieData.genres && request.movieData.genres.length > 0) {
+                        <div class="genres-mini">
+                          {{ request.movieData.genres.slice(0, 2).join(', ') }}
+                          @if (request.movieData.genres.length > 2) {
+                            <span>+{{ request.movieData.genres.length - 2 }}</span>
+                          }
+                        </div>
+                      }
+                    </div>
+                  </td>
+                  <td>
+                    <span [class]="'status-badge ' + request.status">
+                      @if (request.status === 'pending') { ⏳ Pendiente }
+                      @if (request.status === 'approved') { ✅ Aprobada }
+                      @if (request.status === 'rejected') { ❌ Rechazada }
+                    </span>
+                  </td>
+                  <td>
+                    <div class="date-info">
+                      <div>{{ request.createdAt | date:'short' }}</div>
+                      @if (request.updatedAt && request.updatedAt !== request.createdAt) {
+                        <small>Actualizada: {{ request.updatedAt | date:'short' }}</small>
+                      }
+                    </div>
+                  </td>
+                  <td>
+                    <div class="action-buttons">
+                      <button
+                        class="btn-view"
+                        (click)="viewRequestDetails(request)"
+                        title="Ver detalles">
+                        👁️ Ver
+                      </button>
+                      @if (request.status === 'pending') {
+                        <button
+                          class="btn-approve"
+                          (click)="approveRequest(request)"
+                          title="Aprobar solicitud">
+                          ✅
+                        </button>
+                        <button
+                          class="btn-reject"
+                          (click)="rejectRequest(request)"
+                          title="Rechazar solicitud">
+                          ❌
+                        </button>
+                      }
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <div class="empty-state">
+          <p>📭 No hay solicitudes {{ requestsFilter() === 'all' ? '' : requestsFilter() === 'pending' ? 'pendientes' : requestsFilter() === 'approved' ? 'aprobadas' : 'rechazadas' }}</p>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Request Details Modal -->
+  @if (showRequestDetails() && selectedRequest()) {
+    <div class="modal-overlay" (click)="closeRequestDetails()">
+      <div class="modal-content request-details" (click)="$event.stopPropagation()">
+        <button class="modal-close" (click)="closeRequestDetails()">✕</button>
+
+        <h2>Detalles de la Solicitud</h2>
+
+        <div class="request-detail-section">
+          <h3>📋 Información General</h3>
+          <div class="detail-grid">
+            <div class="detail-item">
+              <strong>ID:</strong>
+              <span>{{ selectedRequest()!.requestId }}</span>
+            </div>
+            <div class="detail-item">
+              <strong>Usuario ID:</strong>
+              <span>{{ selectedRequest()!.userId }}</span>
+            </div>
+            <div class="detail-item">
+              <strong>Tipo:</strong>
+              <span>{{ selectedRequest()!.requestType === 'add' ? 'Agregar película' : 'Editar película' }}</span>
+            </div>
+            <div class="detail-item">
+              <strong>Estado:</strong>
+              <span [class]="'status-badge ' + selectedRequest()!.status">
+                {{ selectedRequest()!.status === 'pending' ? '⏳ Pendiente' : selectedRequest()!.status === 'approved' ? '✅ Aprobada' : '❌ Rechazada' }}
+              </span>
+            </div>
+            <div class="detail-item">
+              <strong>Creada:</strong>
+              <span>{{ selectedRequest()!.createdAt | date:'medium' }}</span>
+            </div>
+            @if (selectedRequest()!.updatedAt && selectedRequest()!.updatedAt !== selectedRequest()!.createdAt) {
+              <div class="detail-item">
+                <strong>Actualizada:</strong>
+                <span>{{ selectedRequest()!.updatedAt | date:'medium' }}</span>
+              </div>
+            }
+            @if (selectedRequest()!.reviewedBy) {
+              <div class="detail-item">
+                <strong>Revisada por:</strong>
+                <span>Admin ID {{ selectedRequest()!.reviewedBy }}</span>
+              </div>
+            }
+          </div>
+        </div>
+
+        <div class="request-detail-section">
+          <h3>🎬 Datos de la Película</h3>
+          <div class="movie-detail-grid">
+            <div class="detail-item full-width">
+              <strong>Título:</strong>
+              <span>{{ selectedRequest()!.movieData.title }}</span>
+            </div>
+            @if (selectedRequest()!.movieData.year) {
+              <div class="detail-item">
+                <strong>Año:</strong>
+                <span>{{ selectedRequest()!.movieData.year }}</span>
+              </div>
+            }
+            @if (selectedRequest()!.movieData.genres && selectedRequest()!.movieData.genres!.length > 0) {
+              <div class="detail-item full-width">
+                <strong>Géneros:</strong>
+                <span>{{ selectedRequest()!.movieData.genres!.join(', ') }}</span>
+              </div>
+            }
+            @if (selectedRequest()!.movieData.links.tmdb) {
+              <div class="detail-item">
+                <strong>TMDB ID:</strong>
+                <span>{{ selectedRequest()!.movieData.links.tmdb }}</span>
+              </div>
+            }
+            @if (selectedRequest()!.movieData.links.imdb) {
+              <div class="detail-item">
+                <strong>IMDB ID:</strong>
+                <span>{{ selectedRequest()!.movieData.links.imdb }}</span>
+              </div>
+            }
+          </div>
+        </div>
+
+        @if (selectedRequest()!.reviewNote) {
+          <div class="request-detail-section">
+            <h3>💬 Nota de Revisión</h3>
+            <p class="review-note">{{ selectedRequest()!.reviewNote }}</p>
+          </div>
+        }
+
+        @if (selectedRequest()!.status === 'pending') {
+          <div class="request-detail-section">
+            <h3>✍️ Nota de Revisión (Opcional)</h3>
+            <textarea
+              [(ngModel)]="reviewNote"
+              placeholder="Agregar nota de revisión..."
+              rows="3"
+              class="review-note-input"></textarea>
+          </div>
+
+          <div class="modal-actions">
+            <button class="btn-approve-large" (click)="approveRequest(selectedRequest()!)">
+              ✅ Aprobar Solicitud
+            </button>
+            <button class="btn-reject-large" (click)="rejectRequest(selectedRequest()!)">
+              ❌ Rechazar Solicitud
+            </button>
+          </div>
+        }
+      </div>
     </div>
   }
 

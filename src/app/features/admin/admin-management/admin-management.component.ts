@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AdminService } from '../../../services/admin.service';
 import { MovieService } from '../../../services/movie.service';
+import { MovieRequestService } from '../../../services/movie-request.service';
 import {
   Movie,
   CreateMovieRequest,
@@ -11,12 +12,13 @@ import {
   CreateRatingByAdminRequest,
   UpdateRatingByAdminRequest,
   DeleteRatingByAdminRequest,
-  User
+  User,
+  MovieRequest
 } from '../../../models';
 import { StarRatingComponent } from '../../../shared/components/star-rating/star-rating.component';
 import { TEST_USERS } from '../../../data/test-users';
 
-type AdminTab = 'movies' | 'ratings' | 'remap';
+type AdminTab = 'movies' | 'ratings' | 'requests' | 'remap';
 
 @Component({
   selector: 'app-admin-management',
@@ -142,9 +144,31 @@ export class AdminManagementComponent implements OnInit {
   }));
   availableMovies = computed(() => this.movies());
 
+  // ============================================
+  // REQUESTS TAB
+  // ============================================
+
+  movieRequests = signal<MovieRequest[]>([]);
+  requestsTotal = signal(0);
+  requestsFilter = signal<'all' | 'pending' | 'approved' | 'rejected'>('pending');
+  showRequestDetails = signal(false);
+  selectedRequest = signal<MovieRequest | null>(null);
+  reviewNote = signal('');
+
+  pendingRequestsCount = computed(() =>
+    this.movieRequests().filter(r => r.status === 'pending').length
+  );
+
+  filteredRequests = computed(() => {
+    const filter = this.requestsFilter();
+    if (filter === 'all') return this.movieRequests();
+    return this.movieRequests().filter(r => r.status === filter);
+  });
+
   // Services
   private adminService = inject(AdminService);
   private movieService = inject(MovieService);
+  private movieRequestService = inject(MovieRequestService);
 
   // ============================================
   // REMAP TAB
@@ -182,6 +206,7 @@ export class AdminManagementComponent implements OnInit {
   ngOnInit(): void {
     this.loadMovies();
     this.loadRatings();
+    this.loadRequests();
   }
 
   // ============================================
@@ -251,28 +276,32 @@ export class AdminManagementComponent implements OnInit {
   openEditMovieForm(movie: Movie): void {
     this.isEditingMovie.set(true);
     this.editingMovieId.set(movie.movieId);
-    const movieExt = movie as any; // Cast to access extended properties
+
+    // Extract genome tags as comma-separated string
+    const genomeTagsStr = movie.genomeTags?.map(gt => gt.tag).join(', ') || '';
+    const userTagsArray = movie.userTags || [];
+
     this.movieForm.set({
       title: movie.title,
-      year: movie.releaseDate ? new Date(movie.releaseDate).getFullYear() : new Date().getFullYear(),
+      year: movie.year || new Date().getFullYear(),
       genres: [...movie.genres],
-      tmdbId: movie.tmdbId,
-      imdbId: movie.imdbId,
-      movieLensId: movie.movieLensId,
-      genomeTags: movieExt.genomeTags || [],
-      userTags: movieExt.userTags || [],
-      overview: movie.overview,
-      posterPath: movie.posterPath,
-      backdropPath: movie.backdropPath,
-      voteAverage: movie.voteAverage,
-      voteCount: movie.voteCount,
-      popularity: movie.popularity,
-      runtime: movie.runtime,
-      budget: movie.budget,
-      revenue: movie.revenue,
-      releaseDate: movie.releaseDate,
-      originalLanguage: movie.originalLanguage,
-      tagline: movie.tagline
+      tmdbId: movie.externalData?.posterUrl ? undefined : undefined, // TODO: extract from links
+      imdbId: movie.links?.imdb || '',
+      movieLensId: undefined, // TODO: extract from links
+      genomeTags: genomeTagsStr,
+      userTags: userTagsArray.join(', '),
+      overview: movie.externalData?.overview,
+      posterPath: movie.externalData?.posterUrl,
+      backdropPath: undefined,
+      voteAverage: movie.ratingStats?.average,
+      voteCount: movie.ratingStats?.count,
+      popularity: undefined,
+      runtime: movie.externalData?.runtime,
+      budget: movie.externalData?.budget,
+      revenue: movie.externalData?.revenue,
+      releaseDate: movie.year ? `${movie.year}-01-01` : undefined,
+      originalLanguage: undefined,
+      tagline: undefined
     });
     this.showMovieForm.set(true);
   }
@@ -533,6 +562,86 @@ export class AdminManagementComponent implements OnInit {
       error: (err) => {
         console.error('Error deleting rating:', err);
         alert('Error al eliminar la calificación');
+      }
+    });
+  }
+
+  // ============================================
+  // REQUESTS MANAGEMENT
+  // ============================================
+
+  loadRequests(): void {
+    this.movieRequestService.getAllMovieRequests().subscribe({
+      next: (response) => {
+        this.movieRequests.set(response.requests);
+        this.requestsTotal.set(response.total);
+      },
+      error: (err) => {
+        console.error('Error loading requests:', err);
+        alert('Error al cargar las solicitudes');
+      }
+    });
+  }
+
+  setRequestsFilter(filter: 'all' | 'pending' | 'approved' | 'rejected'): void {
+    this.requestsFilter.set(filter);
+  }
+
+  viewRequestDetails(request: MovieRequest): void {
+    this.selectedRequest.set(request);
+    this.reviewNote.set(request.reviewNote || '');
+    this.showRequestDetails.set(true);
+  }
+
+  closeRequestDetails(): void {
+    this.showRequestDetails.set(false);
+    this.selectedRequest.set(null);
+    this.reviewNote.set('');
+  }
+
+  approveRequest(request: MovieRequest): void {
+    if (!confirm(`¿Aprobar la solicitud de ${request.requestType === 'add' ? 'agregar' : 'editar'} "${request.movieData.title}"?`)) {
+      return;
+    }
+
+    if (!request.requestId) {
+      alert('Error: ID de solicitud no válido');
+      return;
+    }
+
+    const note = this.reviewNote() || 'Solicitud aprobada';
+
+    this.movieRequestService.approveMovieRequest(request.requestId, note).subscribe({
+      next: () => {
+        alert('Solicitud aprobada exitosamente');
+        this.loadRequests();
+        this.closeRequestDetails();
+      },
+      error: (err) => {
+        console.error('Error approving request:', err);
+        alert('Error al aprobar la solicitud');
+      }
+    });
+  }
+
+  rejectRequest(request: MovieRequest): void {
+    const note = prompt('Motivo del rechazo (opcional):');
+    if (note === null) return; // User cancelled
+
+    if (!request.requestId) {
+      alert('Error: ID de solicitud no válido');
+      return;
+    }
+
+    this.movieRequestService.rejectMovieRequest(request.requestId, note || 'Solicitud rechazada').subscribe({
+      next: () => {
+        alert('Solicitud rechazada');
+        this.loadRequests();
+        this.closeRequestDetails();
+      },
+      error: (err) => {
+        console.error('Error rejecting request:', err);
+        alert('Error al rechazar la solicitud');
       }
     });
   }

@@ -21,6 +21,7 @@ import {
   CreateRatingRequest,
   UserRatingsResponse
 } from '../models';
+import { mockRatings, getRatingsByUser } from '../data/mock-ratings';
 
 @Injectable({
   providedIn: 'root'
@@ -28,14 +29,10 @@ import {
 export class RatingService {
   private readonly API_URL = environment.apiUrl;
 
-  // Mock database
-  private mockRatings: Rating[] = [];
+  // Mock database - inicializado con datos reales de mock-ratings.ts
+  private mockRatingsData: Rating[] = [...mockRatings];
 
-  constructor(private http: HttpClient) {
-    if (environment.mockData) {
-      this.initializeMockRatings();
-    }
-  }
+  constructor(private http: HttpClient) {}
 
   /**
    * Obtener mis ratings
@@ -115,7 +112,7 @@ export class RatingService {
       delay(300),
       map(() => {
         const currentUserId = parseInt(localStorage.getItem('userId') || '1');
-        const userRatings = this.mockRatings.filter(r => r.userId === currentUserId);
+        const userRatings = this.mockRatingsData.filter(r => r.userId === currentUserId);
 
         return {
           ratings: userRatings,
@@ -141,7 +138,7 @@ export class RatingService {
         }
 
         // Buscar si ya existe un rating para esta película
-        const existingIndex = this.mockRatings.findIndex(
+        const existingIndex = this.mockRatingsData.findIndex(
           r => r.userId === currentUserId && r.movieId === request.movieId
         );
 
@@ -154,10 +151,10 @@ export class RatingService {
 
         if (existingIndex >= 0) {
           // Actualizar rating existente
-          this.mockRatings[existingIndex] = newRating;
+          this.mockRatingsData[existingIndex] = newRating;
         } else {
           // Crear nuevo rating
-          this.mockRatings.push(newRating);
+          this.mockRatingsData.push(newRating);
         }
 
         return newRating;
@@ -170,7 +167,7 @@ export class RatingService {
     return of(null).pipe(
       delay(300),
       map(() => {
-        const userRatings = this.mockRatings.filter(r => r.userId === userId);
+        const userRatings = this.mockRatingsData.filter(r => r.userId === userId);
 
         return {
           ratings: userRatings,
@@ -189,7 +186,7 @@ export class RatingService {
           throw { error: 'Rating must be between 0.5 and 5.0', status: 400 };
         }
 
-        const existingIndex = this.mockRatings.findIndex(
+        const existingIndex = this.mockRatingsData.findIndex(
           r => r.userId === userId && r.movieId === request.movieId
         );
 
@@ -201,9 +198,9 @@ export class RatingService {
         };
 
         if (existingIndex >= 0) {
-          this.mockRatings[existingIndex] = newRating;
+          this.mockRatingsData[existingIndex] = newRating;
         } else {
-          this.mockRatings.push(newRating);
+          this.mockRatingsData.push(newRating);
         }
 
         return newRating;
@@ -217,32 +214,15 @@ export class RatingService {
       delay(200),
       map(() => {
         const currentUserId = parseInt(localStorage.getItem('userId') || '1');
-        const index = this.mockRatings.findIndex(
+        const index = this.mockRatingsData.findIndex(
           r => r.userId === currentUserId && r.movieId === movieId
         );
 
         if (index >= 0) {
-          this.mockRatings.splice(index, 1);
+          this.mockRatingsData.splice(index, 1);
         }
       })
     );
-  }
-
-  /**
-   * Inicializar ratings mock para testing
-   */
-  private initializeMockRatings(): void {
-    // Algunos ratings de ejemplo para el usuario 1
-    this.mockRatings = [
-      { userId: 1, movieId: 1, rating: 5.0, timestamp: Date.now() / 1000 },
-      { userId: 1, movieId: 3, rating: 4.5, timestamp: Date.now() / 1000 },
-      { userId: 1, movieId: 7, rating: 4.0, timestamp: Date.now() / 1000 },
-      { userId: 1, movieId: 12, rating: 3.5, timestamp: Date.now() / 1000 },
-      // Usuario 2
-      { userId: 2, movieId: 2, rating: 4.5, timestamp: Date.now() / 1000 },
-      { userId: 2, movieId: 5, rating: 5.0, timestamp: Date.now() / 1000 },
-      { userId: 2, movieId: 8, rating: 3.0, timestamp: Date.now() / 1000 },
-    ];
   }
 
   private handleError(error: any): Observable<never> {

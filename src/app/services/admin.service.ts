@@ -201,16 +201,16 @@ export class AdminService {
                 bVal = b.title;
                 break;
               case 'year':
-                aVal = a.releaseDate ? new Date(a.releaseDate).getFullYear() : 0;
-                bVal = b.releaseDate ? new Date(b.releaseDate).getFullYear() : 0;
+                aVal = a.year || 0;
+                bVal = b.year || 0;
                 break;
               case 'rating':
-                aVal = a.voteAverage || 0;
-                bVal = b.voteAverage || 0;
+                aVal = a.ratingStats?.average || 0;
+                bVal = b.ratingStats?.average || 0;
                 break;
               case 'popularity':
-                aVal = a.popularity || 0;
-                bVal = b.popularity || 0;
+                aVal = 0; // Popularity no disponible en estructura backend
+                bVal = 0;
                 break;
               default:
                 aVal = a.movieId;
@@ -246,22 +246,29 @@ export class AdminService {
         const newMovie: Movie = {
           movieId: Math.max(...this.mockMoviesDb.map(m => m.movieId)) + 1,
           title: movie.title,
+          year: movie.year,
           genres: movie.genres,
-          releaseDate: movie.releaseDate || `${movie.year}-01-01`,
-          overview: movie.overview,
-          posterPath: movie.posterPath,
-          backdropPath: movie.backdropPath,
-          voteAverage: movie.voteAverage,
-          voteCount: movie.voteCount,
-          popularity: movie.popularity,
-          runtime: movie.runtime,
-          originalLanguage: movie.originalLanguage,
-          tagline: movie.tagline,
-          tmdbId: movie.tmdbId,
-          imdbId: movie.imdbId,
-          movieLensId: movie.movieLensId,
-          budget: movie.budget,
-          revenue: movie.revenue
+          links: {
+            imdb: movie.imdbId,
+            tmdb: movie.tmdbId?.toString(),
+            movielens: movie.movieLensId?.toString()
+          },
+          genomeTags: [],
+          userTags: [],
+          ratingStats: {
+            average: 0,
+            count: 0
+          },
+          externalData: {
+            posterUrl: movie.posterPath,
+            overview: movie.overview,
+            runtime: movie.runtime,
+            budget: movie.budget,
+            revenue: movie.revenue,
+            tmdbFetched: false
+          },
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
         };
         this.mockMoviesDb.push(newMovie);
         return newMovie;
@@ -278,9 +285,13 @@ export class AdminService {
           throw new Error('Movie not found');
         }
 
+        const existing = this.mockMoviesDb[index];
         this.mockMoviesDb[index] = {
-          ...this.mockMoviesDb[index],
-          ...movie
+          ...existing,
+          title: movie.title || existing.title,
+          year: movie.year ?? existing.year,
+          genres: movie.genres || existing.genres,
+          updatedAt: new Date().toISOString()
         };
 
         return this.mockMoviesDb[index];

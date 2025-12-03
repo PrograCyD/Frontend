@@ -277,7 +277,7 @@ export class RecommendationService {
         reason: reasons[i % reasons.length],
         posterUrl: `https://image.tmdb.org/t/p/w500/mock-rec-${movieId}.jpg`,
         genres: this.getRandomGenres(),
-        voteAverage: 7.0 + Math.random() * 2.5
+        voteAverage: 7.0 + Math.random() * 2.5 // Este campo es solo para UI mock
       };
     });
   }

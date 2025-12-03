@@ -22,8 +22,7 @@ export class TopMovieCardComponent {
   }
 
   getYear(): string {
-    if (!this.movie.releaseDate) return '';
-    return new Date(this.movie.releaseDate).getFullYear().toString();
+    return this.movie.year?.toString() || '';
   }
 
   getGenreNames(): string[] {
@@ -32,11 +31,11 @@ export class TopMovieCardComponent {
   }
 
   getPosterUrl(): string {
-    return this.movie.posterPath || '/assets/images/movie-placeholder.svg';
+    return this.movie.externalData?.posterUrl || '/assets/images/movie-placeholder.svg';
   }
 
   getAverageRating(): number {
-    return this.movie.averageRating || 0;
+    return this.movie.ratingStats?.average || 0;
   }
 
   getRankDisplay(): string {
