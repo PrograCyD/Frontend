@@ -27,6 +27,9 @@ export class HomeWelcomeComponent implements OnInit, AfterViewInit {
   @ViewChild('topCarousel') topCarousel!: ElementRef<HTMLDivElement>;
   @ViewChild('topPrev') topPrev!: ElementRef<HTMLButtonElement>;
   @ViewChild('topNext') topNext!: ElementRef<HTMLButtonElement>;
+  @ViewChild('popularCarousel') popularCarousel!: ElementRef<HTMLDivElement>;
+  @ViewChild('popularPrev') popularPrev!: ElementRef<HTMLButtonElement>;
+  @ViewChild('popularNext') popularNext!: ElementRef<HTMLButtonElement>;
   @ViewChild('recommendedCarousel') recommendedCarousel!: ElementRef<HTMLDivElement>;
   @ViewChild('genreCarousel') genreCarousel!: ElementRef<HTMLDivElement>;
   @ViewChild('likedCarousel') likedCarousel!: ElementRef<HTMLDivElement>;
@@ -39,6 +42,7 @@ export class HomeWelcomeComponent implements OnInit, AfterViewInit {
 
   featuredMovie = signal<MovieExtended | null>(null);
   topMovies = signal<MovieExtended[]>([]);
+  popularMovies = signal<MovieExtended[]>([]);
   recommendedMovies = signal<MovieExtended[]>([]);
   genreRecommendations = signal<MovieExtended[]>([]);
   becauseYouLikedMovies = signal<MovieExtended[]>([]);
@@ -61,6 +65,7 @@ export class HomeWelcomeComponent implements OnInit, AfterViewInit {
     // Configurar listeners de scroll para actualizar botones
     setTimeout(() => {
       this.updateCarouselButtons('top');
+      this.updateCarouselButtons('popular');
       this.updateCarouselButtons('recommended');
       this.updateCarouselButtons('genre');
       this.updateCarouselButtons('liked');
@@ -69,6 +74,11 @@ export class HomeWelcomeComponent implements OnInit, AfterViewInit {
       if (this.topCarousel?.nativeElement) {
         this.topCarousel.nativeElement.addEventListener('scroll', () => {
           this.updateCarouselButtons('top');
+        });
+      }
+      if (this.popularCarousel?.nativeElement) {
+        this.popularCarousel.nativeElement.addEventListener('scroll', () => {
+          this.updateCarouselButtons('popular');
         });
       }
       if (this.recommendedCarousel?.nativeElement) {
@@ -92,6 +102,13 @@ export class HomeWelcomeComponent implements OnInit, AfterViewInit {
   loadMovies(): void {
     this.featuredMovie.set(getFeaturedMovie());
     this.topMovies.set(getTopRatedMovies(10));
+    // Películas más populares basadas en número de ratings
+    const moviesByPopularity = [...mockMovies].sort((a, b) => {
+      const countA = a.ratingStats?.count || 0;
+      const countB = b.ratingStats?.count || 0;
+      return countB - countA;
+    });
+    this.popularMovies.set(moviesByPopularity.slice(0, 10));
     this.recommendedMovies.set(getTrendingMovies(8));
     this.genreRecommendations.set(getMoviesByGenre('Acción', 8));
     this.becauseYouLikedMovies.set(mockMovies.slice(0, 8));
@@ -141,17 +158,25 @@ export class HomeWelcomeComponent implements OnInit, AfterViewInit {
     // Por ahora solo mostramos en consola
   }
 
+  onPopularMovieRatingChange(event: {movie: MovieExtended, rating: number}): void {
+    console.log(`Rating para película popular ${event.movie.title}:`, event.rating);
+    // Aquí se enviaría la calificación al backend
+  }
+
   onMovieRatingChange(event: {movie: MovieExtended, rating: number}): void {
     console.log(`Rating para ${event.movie.title}:`, event.rating);
     // Aquí se enviaría la calificación al backend
   }
 
-  scrollCarousel(carousel: 'top' | 'recommended' | 'genre' | 'liked', direction: 'left' | 'right'): void {
+  scrollCarousel(carousel: 'top' | 'popular' | 'recommended' | 'genre' | 'liked', direction: 'left' | 'right'): void {
     let carouselElement: HTMLDivElement | undefined;
 
     switch(carousel) {
       case 'top':
         carouselElement = this.topCarousel?.nativeElement;
+        break;
+      case 'popular':
+        carouselElement = this.popularCarousel?.nativeElement;
         break;
       case 'recommended':
         carouselElement = this.recommendedCarousel?.nativeElement;
@@ -177,7 +202,7 @@ export class HomeWelcomeComponent implements OnInit, AfterViewInit {
     });
   }
 
-  updateCarouselButtons(carousel: 'top' | 'recommended' | 'genre' | 'liked'): void {
+  updateCarouselButtons(carousel: 'top' | 'popular' | 'recommended' | 'genre' | 'liked'): void {
     let carouselElement: HTMLDivElement | undefined;
     let prevButton: HTMLButtonElement | undefined;
     let nextButton: HTMLButtonElement | undefined;
@@ -187,6 +212,11 @@ export class HomeWelcomeComponent implements OnInit, AfterViewInit {
         carouselElement = this.topCarousel?.nativeElement;
         prevButton = this.topPrev?.nativeElement;
         nextButton = this.topNext?.nativeElement;
+        break;
+      case 'popular':
+        carouselElement = this.popularCarousel?.nativeElement;
+        prevButton = this.popularPrev?.nativeElement;
+        nextButton = this.popularNext?.nativeElement;
         break;
       case 'recommended':
         carouselElement = this.recommendedCarousel?.nativeElement;

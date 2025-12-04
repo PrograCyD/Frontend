@@ -190,15 +190,25 @@
 }
 
 .section-link {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.5rem 1.25rem;
   color: var(--color-primary);
+  background: transparent;
+  border: 2px solid var(--color-primary);
+  border-radius: 0.75rem;
   font-size: 1rem;
   font-weight: 600;
   text-decoration: none;
-  transition: color var(--transition-fast);
+  transition: all 0.3s;
 }
 
 .section-link:hover {
-  color: var(--color-primary-hover);
+  color: #fff;
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
 }
 
 /* Top Movies Grid */

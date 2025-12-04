@@ -20,7 +20,7 @@
 .movie-poster {
   position: relative;
   width: 100%;
-  aspect-ratio: 2 / 3;
+  aspect-ratio: 2 / 2.6;
   overflow: hidden;
   background-color: var(--muted);
 }

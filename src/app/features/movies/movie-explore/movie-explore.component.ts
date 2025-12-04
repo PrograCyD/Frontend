@@ -18,6 +18,10 @@ export class MovieExploreComponent implements OnInit {
   selectedGenres = signal<string[]>([]);
   selectedCast = signal<string[]>([]);
   selectedDirectors = signal<string[]>([]);
+  yearFrom = signal<number | null>(null);
+  yearTo = signal<number | null>(null);
+  limit = signal<number>(100);
+  offset = signal<number>(0);
   showFilters = signal(false);
   showGenreDropdown = signal(false);
   showCastDropdown = signal(false);
@@ -54,7 +58,7 @@ export class MovieExploreComponent implements OnInit {
 
   // Filter movies based on search and filters
   filteredMovies = computed(() => {
-    return this.allMovies().filter(movie => {
+    let filtered = this.allMovies().filter(movie => {
       // Search filter
       const matchesSearch = movie.title.toLowerCase().includes(this.searchQuery().toLowerCase());
 
@@ -70,8 +74,18 @@ export class MovieExploreComponent implements OnInit {
       const matchesDirector = this.selectedDirectors().length === 0 ||
         this.selectedDirectors().includes(movie.director || '');
 
-      return matchesSearch && matchesGenre && matchesCast && matchesDirector;
+      // Year filters
+      const movieYear = movie.releaseDate ? new Date(movie.releaseDate).getFullYear() : null;
+      const matchesYearFrom = !this.yearFrom() || (movieYear && movieYear >= this.yearFrom()!);
+      const matchesYearTo = !this.yearTo() || (movieYear && movieYear <= this.yearTo()!);
+
+      return matchesSearch && matchesGenre && matchesCast && matchesDirector && matchesYearFrom && matchesYearTo;
     });
+
+    // Apply offset and limit
+    const offsetValue = this.offset();
+    const limitValue = this.limit();
+    return filtered.slice(offsetValue, offsetValue + limitValue);
   });
 
   activeFiltersCount = computed(() =>
@@ -137,11 +151,40 @@ export class MovieExploreComponent implements OnInit {
     );
   }
 
+  onYearFromChange(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const value = input.value ? parseInt(input.value) : null;
+    this.yearFrom.set(value);
+  }
+
+  onYearToChange(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const value = input.value ? parseInt(input.value) : null;
+    this.yearTo.set(value);
+  }
+
+  onLimitChange(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const value = parseInt(input.value) || 100;
+    this.limit.set(value);
+    this.offset.set(0); // Reset offset when limit changes
+  }
+
+  onOffsetChange(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const value = parseInt(input.value) || 0;
+    this.offset.set(value);
+  }
+
   clearAllFilters(): void {
     this.selectedGenres.set([]);
     this.selectedCast.set([]);
     this.selectedDirectors.set([]);
     this.searchQuery.set('');
+    this.yearFrom.set(null);
+    this.yearTo.set(null);
+    this.limit.set(100);
+    this.offset.set(0);
   }
 
   onMovieClick(movie: MovieExtended): void {

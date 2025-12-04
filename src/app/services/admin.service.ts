@@ -98,6 +98,36 @@ export class AdminService {
     return this.http.delete<DeleteMovieResponse>(`${this.API_URL}/admin/movies/${movieId}`);
   }
 
+  fetchMovieFromUrl(url: string): Observable<Movie> {
+    if (environment.mockData) {
+      // En modo mock, simular la respuesta
+      return of({
+        movieId: Math.floor(Math.random() * 10000),
+        title: 'Película Importada',
+        year: 2024,
+        genres: ['Drama', 'Action'],
+        links: {
+          tmdb: url,
+          imdb: '',
+          movielens: ''
+        },
+        externalData: {
+          posterUrl: 'https://via.placeholder.com/500x750',
+          overview: 'Esta es una película importada desde una URL externa.',
+          director: 'Director Importado',
+          runtime: 120,
+          cast: [
+            { name: 'Actor 1', profileUrl: '' },
+            { name: 'Actor 2', profileUrl: '' }
+          ]
+        }
+      } as Movie).pipe(delay(1000));
+    }
+
+    // Llamar al backend para obtener los datos desde la URL
+    return this.http.post<Movie>(`${this.API_URL}/admin/movies/fetch-from-url`, { url });
+  }
+
   // ============================================
   // GESTIÓN DE RATINGS
   // ============================================

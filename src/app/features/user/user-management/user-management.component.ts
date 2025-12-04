@@ -26,8 +26,11 @@ export class UserManagementComponent implements OnInit {
   // Requests tab
   myRequests = signal<MovieRequest[]>([]);
   showRequestForm = signal(false);
-  formInputMode = signal<'manual' | 'json'>('manual');
+  formInputMode = signal<'manual' | 'url'>('manual');
   genreDropdownOpen = signal(false);
+  isLoadingFromUrl = signal(false);
+  urlImportError = signal<string | null>(null);
+  urlImportSuccess = signal(false);
   requestForm = signal({
     requestType: 'add' as 'add' | 'edit',
     movieId: undefined as number | undefined,
@@ -39,7 +42,14 @@ export class UserManagementComponent implements OnInit {
     tmdbLink: '',
     genomeTags: '',
     userTags: '',
-    apiLink: '',
+    overview: '',
+    posterUrl: '',
+    director: '',
+    budget: undefined as number | undefined,
+    revenue: undefined as number | undefined,
+    cast: '',
+    castUrl: '',
+    importUrl: '',
     jsonData: ''
   });
 
@@ -151,8 +161,56 @@ export class UserManagementComponent implements OnInit {
       tmdbLink: '',
       genomeTags: '',
       userTags: '',
-      apiLink: '',
+      overview: '',
+      posterUrl: '',
+      director: '',
+      budget: undefined,
+      revenue: undefined,
+      cast: '',
+      castUrl: '',
+      importUrl: '',
       jsonData: ''
+    });
+    this.urlImportError.set(null);
+    this.urlImportSuccess.set(false);
+  }
+
+  importFromUrl(): void {
+    const url = this.requestForm().importUrl?.trim();
+    if (!url) return;
+
+    this.isLoadingFromUrl.set(true);
+    this.urlImportError.set(null);
+    this.urlImportSuccess.set(false);
+
+    // Llamar al servicio para obtener los datos desde la URL
+    this.movieService.fetchMovieFromUrl(url).subscribe({
+      next: (movieData) => {
+        // Rellenar el formulario con los datos obtenidos
+        this.requestForm.update(form => ({
+          ...form,
+          title: movieData.title || '',
+          year: movieData.year || new Date().getFullYear(),
+          genres: movieData.genres || [],
+          overview: movieData.externalData?.overview || '',
+          posterUrl: movieData.externalData?.posterUrl || '',
+          director: movieData.externalData?.director || '',
+          imdbLink: movieData.links?.imdb || '',
+          tmdbLink: movieData.links?.tmdb || '',
+          movieLensLink: movieData.links?.movielens || ''
+        }));
+
+        this.isLoadingFromUrl.set(false);
+        this.urlImportSuccess.set(true);
+      },
+      error: (err) => {
+        console.error('Error importing from URL:', err);
+        this.isLoadingFromUrl.set(false);
+        this.urlImportError.set(
+          err.error?.message ||
+          'No se pudieron obtener los datos de la URL. Verifica que sea una URL válida de TMDb, IMDb o MovieLens.'
+        );
+      }
     });
   }
 
@@ -206,7 +264,17 @@ export class UserManagementComponent implements OnInit {
         },
         genomeTags: form.genomeTags ? form.genomeTags.split(',').map(t => t.trim()) : undefined,
         userTags: form.userTags ? form.userTags.split(',').map(t => t.trim()) : undefined,
-        apiLink: form.apiLink || undefined,
+        overview: form.overview || undefined,
+        posterUrl: form.posterUrl || undefined,
+        director: form.director || undefined,
+        budget: form.budget || undefined,
+        revenue: form.revenue || undefined,
+        cast: form.cast || undefined,
+        castDetails: form.cast ? form.cast.split(',').map(name => ({
+          name: name.trim(),
+          imageUrl: undefined
+        })) : undefined,
+        runtime: undefined, // This would need to be added to the form if needed
         jsonData: form.jsonData || undefined
       }
     };

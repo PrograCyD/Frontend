@@ -126,10 +126,10 @@
               <button
                 type="button"
                 class="form-tab"
-                [class.active]="formInputMode() === 'json'"
-                (click)="formInputMode.set('json')">
-                <span class="material-icons">code</span>
-                Importar JSON
+                [class.active]="formInputMode() === 'url'"
+                (click)="formInputMode.set('url')">
+                <span class="material-icons">link</span>
+                Importar desde URL
               </button>
             </div>
 
@@ -368,61 +368,179 @@
                 }
 
                 <!-- JSON INPUT MODE -->
-                @if (formInputMode() === 'json') {
+                @if (formInputMode() === 'url') {
                   <div class="form-section">
-                    <h4><span class="material-icons">code</span> Importar JSON Completo</h4>
+                    <h4><span class="material-icons">link</span> Importar desde URL</h4>
 
                     <div class="form-group">
-                      <label>Pega el JSON de la película</label>
-                      <textarea
-                        [(ngModel)]="movieForm().jsonData"
-                        name="jsonData"
-                        class="form-control json-input"
-                        rows="20"
-                        placeholder='{"movieId":1,"title":"Toy Story","year":1995,"genres":["Adventure","Animation"],...}'
-                        spellcheck="false"></textarea>
+                      <label>URL de TMDb, IMDb o MovieLens</label>
+                      <div class="url-input-group">
+                        <input
+                          type="url"
+                          [(ngModel)]="movieForm().importUrl"
+                          name="importUrl"
+                          class="form-control"
+                          placeholder="https://www.themoviedb.org/movie/862"
+                          [disabled]="isLoadingFromUrl()">
+                        <button
+                          type="button"
+                          class="btn-import"
+                          (click)="importFromUrl()"
+                          [disabled]="!movieForm().importUrl || isLoadingFromUrl()">
+                          @if (isLoadingFromUrl()) {
+                            <span class="material-icons spinning">refresh</span>
+                            Cargando...
+                          } @else {
+                            <span class="material-icons">download</span>
+                            Importar
+                          }
+                        </button>
+                      </div>
                       <small>
-                        <strong>Nota:</strong> El JSON debe seguir la estructura del modelo de película.
-                        Incluye campos como: movieId, title, year, genres, links, genomeTags, userTags, ratingStats, externalData, etc.
+                        <strong>Nota:</strong> Pega la URL de TMDb, IMDb o MovieLens y los datos se obtendrán automáticamente desde nuestra API en los campos editables.
                       </small>
                     </div>
 
-                    <div class="json-help">
-                      <details>
-                        <summary>📖 Ver ejemplo de estructura JSON</summary>
-                        <pre><code>{{ '{' }}
-  "movieId": 1,
-  "title": "Toy Story",
-  "year": 1995,
-  "genres": ["Adventure", "Animation", "Children"],
-  "links": {{ '{' }}
-    "movielens": "https://movielens.org/movies/1",
-    "imdb": "http://www.imdb.com/title/tt0114709/",
-    "tmdb": "https://www.themoviedb.org/movie/862"
-  {{ '}' }},
-  "genomeTags": [
-    {{ '{' }}"tag": "toys", "relevance": 0.99925{{ '}' }},
-    {{ '{' }}"tag": "computer animation", "relevance": 0.99875{{ '}' }}
-  ],
-  "userTags": ["pixar", "animation", "disney"],
-  "ratingStats": {{ '{' }}
-    "average": 3.89,
-    "count": 57309
-  {{ '}' }},
-  "externalData": {{ '{' }}
-    "posterUrl": "https://image.tmdb.org/t/p/w500/...",
-    "overview": "Led by Woody, Andy's toys live happily...",
-    "cast": [
-      {{ '{' }}"name": "Tom Hanks", "profileUrl": "https://..."{{ '}' }}
-    ],
-    "director": "John Lasseter",
-    "runtime": 81,
-    "budget": 30000000,
-    "revenue": 394436586
-  {{ '}' }}
-{{ '}' }}</code></pre>
-                      </details>
-                    </div>
+                    @if (urlImportError()) {
+                      <div class="alert alert-error">
+                        <span class="material-icons">error</span>
+                        {{ urlImportError() }}
+                      </div>
+                    }
+
+                    @if (urlImportSuccess()) {
+                      <div class="alert alert-success">
+                        <span class="material-icons">check_circle</span>
+                        Datos obtenidos exitosamente desde la API. Revisa y edita los campos según sea necesario.
+                      </div>
+                    }
+
+                    <!-- Los campos editables se muestran después de importar -->
+                    @if (urlImportSuccess()) {
+                      <!-- Basic Information -->
+                      <div class="form-section">
+                        <h4><span class="material-icons">info</span> Información Básica (Editable)</h4>
+
+                        <div class="form-row">
+                          <div class="form-group">
+                            <label>Título *</label>
+                            <input
+                              type="text"
+                              [(ngModel)]="movieForm().title"
+                              name="title"
+                              class="form-control"
+                              placeholder="Título de la película"
+                              required>
+                          </div>
+
+                          <div class="form-group">
+                            <label>Año *</label>
+                            <input
+                              type="number"
+                              [(ngModel)]="movieForm().year"
+                              name="year"
+                              class="form-control"
+                              min="1800"
+                              [max]="2100"
+                              required>
+                          </div>
+                        </div>
+
+                        <div class="form-group">
+                          <label>Sinopsis</label>
+                          <textarea
+                            [(ngModel)]="movieForm().overview"
+                            name="overview"
+                            class="form-control"
+                            rows="4"
+                            placeholder="Descripción de la película..."></textarea>
+                        </div>
+
+                        <div class="form-group">
+                          <label>Géneros * (Selecciona al menos uno)</label>
+                          <div class="genre-dropdown">
+                            <button
+                              type="button"
+                              class="genre-dropdown-toggle"
+                              (click)="toggleGenreDropdown()">
+                              <span>{{ getSelectedGenresText() }}</span>
+                              <span class="material-icons">{{ genreDropdownOpen() ? 'expand_less' : 'expand_more' }}</span>
+                            </button>
+                            @if (genreDropdownOpen()) {
+                              <div class="genre-dropdown-menu">
+                                @for (genre of availableGenres; track genre) {
+                                  <label class="genre-dropdown-item">
+                                    <input
+                                      type="checkbox"
+                                      [checked]="movieForm().genres.includes(genre)"
+                                      (change)="toggleMovieGenre(genre)">
+                                    <span>{{ genre }}</span>
+                                  </label>
+                                }
+                              </div>
+                            }
+                          </div>
+                          @if (movieForm().genres.length > 0) {
+                            <div class="selected-genres">
+                              @for (genre of movieForm().genres; track genre) {
+                                <span class="selected-genre-badge">
+                                  {{ genre }}
+                                  <button
+                                    type="button"
+                                    class="remove-genre"
+                                    (click)="toggleMovieGenre(genre)">
+                                    ×
+                                  </button>
+                                </span>
+                              }
+                            </div>
+                          }
+                        </div>
+
+                        <div class="form-row">
+                          <div class="form-group">
+                            <label>Director</label>
+                            <input
+                              type="text"
+                              [(ngModel)]="movieForm().director"
+                              name="director"
+                              class="form-control"
+                              placeholder="Director de la película">
+                          </div>
+
+                          <div class="form-group">
+                            <label>Duración (minutos)</label>
+                            <input
+                              type="number"
+                              [(ngModel)]="movieForm().runtime"
+                              name="runtime"
+                              class="form-control"
+                              min="1"
+                              placeholder="120">
+                          </div>
+                        </div>
+
+                        <div class="form-group">
+                          <label>URL del Póster</label>
+                          <input
+                            type="url"
+                            [(ngModel)]="movieForm().posterUrl"
+                            name="posterUrl"
+                            class="form-control"
+                            placeholder="https://image.tmdb.org/t/p/w500/...">
+                        </div>
+
+                        <div class="form-group">
+                          <label>Reparto (separado por comas)</label>
+                          <input
+                            type="text"
+                            [(ngModel)]="movieForm().castInput"
+                            name="castInput"
+                            class="form-control"
+                            placeholder="Tom Hanks, Tim Allen, Don Rickles">
+                        </div>
+                      </div>
+                    }
                   </div>
                 }
 
@@ -480,6 +598,9 @@
                   <td>{{ movie.ratingStats?.average?.toFixed(1) || 'N/A' }}</td>
                   <td>
                     <div class="actions-cell">
+                      <button class="btn-small btn-view" (click)="viewMovie(movie.movieId)">
+                        <span class="material-icons">visibility</span>
+                      </button>
                       <button class="btn-small btn-edit" (click)="openEditMovieForm(movie)">
                         <span class="material-icons">edit</span>
                       </button>
@@ -879,6 +1000,8 @@
 
         <div class="request-detail-section">
           <h3><span class="material-icons">movie</span> Datos de la Película</h3>
+
+          <!-- Basic Info -->
           <div class="movie-detail-grid">
             <div class="detail-item full-width">
               <strong>Título:</strong>
@@ -890,25 +1013,145 @@
                 <span>{{ selectedRequest()!.movieData.year }}</span>
               </div>
             }
+            @if (selectedRequest()!.movieData.runtime) {
+              <div class="detail-item">
+                <strong>Duración:</strong>
+                <span>{{ selectedRequest()!.movieData.runtime }} minutos</span>
+              </div>
+            }
             @if (selectedRequest()!.movieData.genres && selectedRequest()!.movieData.genres!.length > 0) {
               <div class="detail-item full-width">
                 <strong>Géneros:</strong>
                 <span>{{ selectedRequest()!.movieData.genres!.join(', ') }}</span>
               </div>
             }
-            @if (selectedRequest()!.movieData.links.tmdb) {
-              <div class="detail-item">
-                <strong>TMDB ID:</strong>
-                <span>{{ selectedRequest()!.movieData.links.tmdb }}</span>
-              </div>
-            }
-            @if (selectedRequest()!.movieData.links.imdb) {
-              <div class="detail-item">
-                <strong>IMDB ID:</strong>
-                <span>{{ selectedRequest()!.movieData.links.imdb }}</span>
+            @if (selectedRequest()!.movieData.director) {
+              <div class="detail-item full-width">
+                <strong>Director:</strong>
+                <span>{{ selectedRequest()!.movieData.director }}</span>
               </div>
             }
           </div>
+
+          <!-- Poster -->
+          @if (selectedRequest()!.movieData.posterUrl) {
+            <div class="poster-preview">
+              <strong>Póster:</strong>
+              <img [src]="selectedRequest()!.movieData.posterUrl"
+                   [alt]="selectedRequest()!.movieData.title"
+                   class="request-poster">
+            </div>
+          }
+
+          <!-- Synopsis -->
+          @if (selectedRequest()!.movieData.overview) {
+            <div class="synopsis-section">
+              <strong>Sinopsis:</strong>
+              <p>{{ selectedRequest()!.movieData.overview }}</p>
+            </div>
+          }
+
+          <!-- Cast -->
+          @if (selectedRequest()!.movieData.cast || (selectedRequest()!.movieData.castDetails && selectedRequest()!.movieData.castDetails!.length > 0)) {
+            <div class="cast-section">
+              <strong>Elenco:</strong>
+              @if (selectedRequest()!.movieData.castDetails && selectedRequest()!.movieData.castDetails!.length > 0) {
+                <div class="cast-grid">
+                  @for (actor of selectedRequest()!.movieData.castDetails; track actor.name) {
+                    <div class="cast-member">
+                      @if (actor.imageUrl) {
+                        <img [src]="actor.imageUrl" [alt]="actor.name" class="cast-photo">
+                      } @else {
+                        <div class="cast-photo-placeholder">
+                          <span class="material-icons">person</span>
+                        </div>
+                      }
+                      <span class="cast-name">{{ actor.name }}</span>
+                    </div>
+                  }
+                </div>
+              } @else if (selectedRequest()!.movieData.cast) {
+                <p>{{ selectedRequest()!.movieData.cast }}</p>
+              }
+            </div>
+          }
+
+          <!-- Financial Info -->
+          @if (selectedRequest()!.movieData.budget || selectedRequest()!.movieData.revenue) {
+            <div class="movie-detail-grid">
+              @if (selectedRequest()!.movieData.budget) {
+                <div class="detail-item">
+                  <strong>Presupuesto:</strong>
+                  <span>{{ selectedRequest()!.movieData.budget | currency:'USD':'symbol':'1.0-0' }}</span>
+                </div>
+              }
+              @if (selectedRequest()!.movieData.revenue) {
+                <div class="detail-item">
+                  <strong>Recaudación:</strong>
+                  <span>{{ selectedRequest()!.movieData.revenue | currency:'USD':'symbol':'1.0-0' }}</span>
+                </div>
+              }
+            </div>
+          }
+
+          <!-- External Links -->
+          @if (selectedRequest()!.movieData.links.tmdb || selectedRequest()!.movieData.links.imdb || selectedRequest()!.movieData.links.movieLens) {
+            <div class="links-section">
+              <strong>Enlaces Externos:</strong>
+              <div class="links-grid">
+                @if (selectedRequest()!.movieData.links.movieLens) {
+                  <a [href]="selectedRequest()!.movieData.links.movieLens"
+                     target="_blank"
+                     class="external-link">
+                    <span class="material-icons">link</span>
+                    MovieLens
+                  </a>
+                }
+                @if (selectedRequest()!.movieData.links.imdb) {
+                  <a [href]="selectedRequest()!.movieData.links.imdb"
+                     target="_blank"
+                     class="external-link">
+                    <span class="material-icons">link</span>
+                    IMDB
+                  </a>
+                }
+                @if (selectedRequest()!.movieData.links.tmdb) {
+                  <a [href]="selectedRequest()!.movieData.links.tmdb"
+                     target="_blank"
+                     class="external-link">
+                    <span class="material-icons">link</span>
+                    TMDB
+                  </a>
+                }
+              </div>
+            </div>
+          }
+
+          <!-- Tags -->
+          @if ((selectedRequest()!.movieData.genomeTags && selectedRequest()!.movieData.genomeTags!.length > 0) || (selectedRequest()!.movieData.userTags && selectedRequest()!.movieData.userTags!.length > 0)) {
+            <div class="tags-section">
+              @if (selectedRequest()!.movieData.genomeTags && selectedRequest()!.movieData.genomeTags!.length > 0) {
+                <div>
+                  <strong>Genome Tags:</strong>
+                  <div class="tag-list">
+                    @for (tag of selectedRequest()!.movieData.genomeTags; track tag) {
+                      <span class="tag genome-tag">{{ tag }}</span>
+                    }
+                  </div>
+                </div>
+              }
+              @if (selectedRequest()!.movieData.userTags && selectedRequest()!.movieData.userTags!.length > 0) {
+                <div>
+                  <strong>User Tags:</strong>
+                  <div class="tag-list">
+                    @for (tag of selectedRequest()!.movieData.userTags; track tag) {
+                      <span class="tag user-tag">{{ tag }}</span>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          }
         </div>
 
         @if (selectedRequest()!.reviewNote) {

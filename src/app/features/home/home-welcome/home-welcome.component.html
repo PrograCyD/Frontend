@@ -48,10 +48,10 @@
   </section>
 }
 
-<!-- Top 10 Películas -->
+<!-- Top 10 Películas Mejor Rankeadas -->
 <section class="section">
   <div class="section-header">
-    <h2 class="section-title">Top 10 Películas</h2>
+    <h2 class="section-title">Top 10 Películas Mejor Rankeadas</h2>
   </div>
   <button class="carousel-nav-button prev" (click)="scrollCarousel('top', 'left')" #topPrev>
     <span class="material-icons">chevron_left</span>
@@ -69,6 +69,31 @@
     }
   </div>
   <button class="carousel-nav-button next" (click)="scrollCarousel('top', 'right')" #topNext>
+    <span class="material-icons">chevron_right</span>
+  </button>
+</section>
+
+<!-- Top 10 Películas Más Populares -->
+<section class="section">
+  <div class="section-header">
+    <h2 class="section-title">Top 10 Películas Más Populares</h2>
+  </div>
+  <button class="carousel-nav-button prev" (click)="scrollCarousel('popular', 'left')" #popularPrev>
+    <span class="material-icons">chevron_left</span>
+  </button>
+  <div class="top-movies-carousel" #popularCarousel>
+    @for (movie of popularMovies(); track movie.movieId; let idx = $index) {
+      <div class="top-movie-wrapper">
+        <app-top-movie-card
+          [movie]="movie"
+          [rank]="idx + 1"
+          (movieClick)="onMovieClick(movie)"
+          (ratingChange)="onPopularMovieRatingChange($event)">
+        </app-top-movie-card>
+      </div>
+    }
+  </div>
+  <button class="carousel-nav-button next" (click)="scrollCarousel('popular', 'right')" #popularNext>
     <span class="material-icons">chevron_right</span>
   </button>
 </section>

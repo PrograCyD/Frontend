@@ -53,10 +53,10 @@
             <button
               type="button"
               class="form-tab"
-              [class.active]="formInputMode() === 'json'"
-              (click)="formInputMode.set('json')">
-              <span class="material-icons">code</span>
-              Importar JSON
+              [class.active]="formInputMode() === 'url'"
+              (click)="formInputMode.set('url')">
+              <span class="material-icons">link</span>
+              Importar desde URL
             </button>
           </div>
 
@@ -200,6 +200,85 @@
                   </div>
                 </div>
 
+                <!-- Additional Information -->
+                <div class="form-section">
+                  <h4><span class="material-icons">description</span> Información Adicional</h4>
+
+                  <div class="form-group">
+                    <label>Sinopsis</label>
+                    <textarea
+                      [(ngModel)]="requestForm().overview"
+                      name="overview"
+                      class="form-control"
+                      rows="4"
+                      placeholder="Descripción de la película..."></textarea>
+                  </div>
+
+                  <div class="form-group">
+                    <label>Director</label>
+                    <input
+                      type="text"
+                      [(ngModel)]="requestForm().director"
+                      name="director"
+                      class="form-control"
+                      placeholder="Nombre del director">
+                  </div>
+
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label>Presupuesto (USD)</label>
+                      <input
+                        type="number"
+                        [(ngModel)]="requestForm().budget"
+                        name="budget"
+                        class="form-control"
+                        min="0"
+                        placeholder="Ej: 150000000">
+                    </div>
+
+                    <div class="form-group">
+                      <label>Recaudación (USD)</label>
+                      <input
+                        type="number"
+                        [(ngModel)]="requestForm().revenue"
+                        name="revenue"
+                        class="form-control"
+                        min="0"
+                        placeholder="Ej: 500000000">
+                    </div>
+                  </div>
+
+                  <div class="form-group">
+                    <label>Elenco (separados por comas)</label>
+                    <input
+                      type="text"
+                      [(ngModel)]="requestForm().cast"
+                      name="cast"
+                      class="form-control"
+                      placeholder="Actor 1, Actor 2, Actor 3">
+                  </div>
+
+                  <div class="form-group">
+                    <label>URL del Elenco</label>
+                    <input
+                      type="url"
+                      [(ngModel)]="requestForm().castUrl"
+                      name="castUrl"
+                      class="form-control"
+                      placeholder="https://...">
+                  </div>
+
+                  <div class="form-group">
+                    <label>URL del Póster</label>
+                    <input
+                      type="url"
+                      [(ngModel)]="requestForm().posterUrl"
+                      name="posterUrl"
+                      class="form-control"
+                      placeholder="https://image.tmdb.org/t/p/w500/...">
+                  </div>
+                </div>
+
                 <!-- Tags -->
                 <div class="form-section">
                   <h4><span class="material-icons">label</span> Tags</h4>
@@ -224,39 +303,219 @@
                       placeholder="must watch, award winner">
                   </div>
                 </div>
-
-                <!-- API Import -->
-                <div class="form-section">
-                  <h4><span class="material-icons">api</span> Importar desde API (Opcional)</h4>
-
-                  <div class="form-group">
-                    <label>API Link de TMDB</label>
-                    <input
-                      type="text"
-                      [(ngModel)]="requestForm().apiLink"
-                      name="apiLink"
-                      class="form-control"
-                      placeholder="https://api.themoviedb.org/3/movie/...">
-                    <small>Para extraer automáticamente la información de la película</small>
-                  </div>
-                </div>
               }
 
-              <!-- JSON INPUT MODE -->
-              @if (formInputMode() === 'json') {
+              <!-- URL INPUT MODE -->
+              @if (formInputMode() === 'url') {
                 <div class="form-section">
-                  <h4><span class="material-icons">code</span> Importar JSON</h4>
+                  <h4><span class="material-icons">link</span> Importar desde URL</h4>
 
                   <div class="form-group">
-                    <label>Datos JSON de la Película</label>
-                    <textarea
-                      [(ngModel)]="requestForm().jsonData"
-                      name="jsonData"
-                      class="form-control json-textarea"
-                      rows="20"
-                      placeholder='{"title": "Movie Name", "year": 2024, "genres": ["Action", "Drama"], ...}'></textarea>
-                    <small>Pega aquí el JSON completo con la información de la película</small>
+                    <label>URL de TMDb, IMDb o MovieLens</label>
+                    <div class="url-input-group">
+                      <input
+                        type="url"
+                        [(ngModel)]="requestForm().importUrl"
+                        name="importUrl"
+                        class="form-control"
+                        placeholder="https://www.themoviedb.org/movie/862"
+                        [disabled]="isLoadingFromUrl()">
+                      <button
+                        type="button"
+                        class="btn-import"
+                        (click)="importFromUrl()"
+                        [disabled]="!requestForm().importUrl || isLoadingFromUrl()">
+                        @if (isLoadingFromUrl()) {
+                          <span class="material-icons spinning">refresh</span>
+                          Cargando...
+                        } @else {
+                          <span class="material-icons">download</span>
+                          Importar
+                        }
+                      </button>
+                    </div>
+                    <small>
+                      <strong>Nota:</strong> Pega la URL de TMDb, IMDb o MovieLens y los datos se obtendrán automáticamente desde nuestra API en los campos editables.
+                    </small>
                   </div>
+
+                  @if (urlImportError()) {
+                    <div class="alert alert-error">
+                      <span class="material-icons">error</span>
+                      {{ urlImportError() }}
+                    </div>
+                  }
+
+                  @if (urlImportSuccess()) {
+                    <div class="alert alert-success">
+                      <span class="material-icons">check_circle</span>
+                      Datos obtenidos exitosamente desde la API. Revisa y edita los campos según sea necesario.
+                    </div>
+                  }
+
+                  <!-- Los campos editables se muestran después de importar -->
+                  @if (urlImportSuccess()) {
+                    <!-- Type Selection -->
+                    <div class="form-section">
+                      <h4><span class="material-icons">settings</span> Tipo de Solicitud</h4>
+
+                      <div class="form-row">
+                        <div class="form-group">
+                          <label>Tipo de Solicitud *</label>
+                          <select [(ngModel)]="requestForm().requestType" name="requestType" class="form-control">
+                            <option value="add">Agregar nueva película</option>
+                            <option value="edit">Editar película existente</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Basic Information -->
+                    <div class="form-section">
+                      <h4><span class="material-icons">info</span> Información Básica (Editable)</h4>
+
+                      <div class="form-row">
+                        <div class="form-group">
+                          <label>Título *</label>
+                          <input
+                            type="text"
+                            [(ngModel)]="requestForm().title"
+                            name="title"
+                            class="form-control"
+                            placeholder="Título de la película"
+                            required>
+                        </div>
+
+                        <div class="form-group">
+                          <label>Año *</label>
+                          <input
+                            type="number"
+                            [(ngModel)]="requestForm().year"
+                            name="year"
+                            class="form-control"
+                            min="1800"
+                            [max]="2100"
+                            required>
+                        </div>
+                      </div>
+
+                      <div class="form-group">
+                        <label>Sinopsis</label>
+                        <textarea
+                          [(ngModel)]="requestForm().overview"
+                          name="overview"
+                          class="form-control"
+                          rows="4"
+                          placeholder="Descripción de la película..."></textarea>
+                      </div>
+
+                      <div class="form-group">
+                        <label>Director</label>
+                        <input
+                          type="text"
+                          [(ngModel)]="requestForm().director"
+                          name="director"
+                          class="form-control"
+                          placeholder="Nombre del director">
+                      </div>
+
+                      <div class="form-row">
+                        <div class="form-group">
+                          <label>Presupuesto (USD)</label>
+                          <input
+                            type="number"
+                            [(ngModel)]="requestForm().budget"
+                            name="budget"
+                            class="form-control"
+                            min="0"
+                            placeholder="Ej: 150000000">
+                        </div>
+
+                        <div class="form-group">
+                          <label>Recaudación (USD)</label>
+                          <input
+                            type="number"
+                            [(ngModel)]="requestForm().revenue"
+                            name="revenue"
+                            class="form-control"
+                            min="0"
+                            placeholder="Ej: 500000000">
+                        </div>
+                      </div>
+
+                      <div class="form-group">
+                        <label>Elenco (separados por comas)</label>
+                        <input
+                          type="text"
+                          [(ngModel)]="requestForm().cast"
+                          name="cast"
+                          class="form-control"
+                          placeholder="Actor 1, Actor 2, Actor 3">
+                      </div>
+
+                      <div class="form-group">
+                        <label>URL del Elenco</label>
+                        <input
+                          type="url"
+                          [(ngModel)]="requestForm().castUrl"
+                          name="castUrl"
+                          class="form-control"
+                          placeholder="https://...">
+                      </div>
+
+                      <div class="form-group">
+                        <label>URL del Póster</label>
+                        <input
+                          type="url"
+                          [(ngModel)]="requestForm().posterUrl"
+                          name="posterUrl"
+                          class="form-control"
+                          placeholder="https://image.tmdb.org/t/p/w500/...">
+                      </div>
+
+                      <div class="form-group">
+                        <label>Géneros * (Selecciona al menos uno)</label>
+                        <div class="genre-dropdown">
+                          <button
+                            type="button"
+                            class="genre-dropdown-toggle"
+                            (click)="toggleGenreDropdown()">
+                            <span>{{ getSelectedGenresText() }}</span>
+                            <span class="material-icons">{{ genreDropdownOpen() ? 'expand_less' : 'expand_more' }}</span>
+                          </button>
+                          @if (genreDropdownOpen()) {
+                            <div class="genre-dropdown-menu">
+                              @for (genre of availableGenres; track genre) {
+                                <label class="genre-dropdown-item">
+                                  <input
+                                    type="checkbox"
+                                    [checked]="requestForm().genres.includes(genre)"
+                                    (change)="toggleGenre(genre)">
+                                  <span>{{ genre }}</span>
+                                </label>
+                              }
+                            </div>
+                          }
+                        </div>
+                        @if (requestForm().genres.length > 0) {
+                          <div class="selected-genres">
+                            @for (genre of requestForm().genres; track genre) {
+                              <span class="selected-genre-badge">
+                                {{ genre }}
+                                <button
+                                  type="button"
+                                  class="remove-genre"
+                                  (click)="toggleGenre(genre)">
+                                  ×
+                                </button>
+                              </span>
+                            }
+                          </div>
+                        }
+                      </div>
+
+                    </div>
+                  }
                 </div>
               }
 

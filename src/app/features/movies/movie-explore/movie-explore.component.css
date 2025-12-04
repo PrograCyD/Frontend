@@ -153,9 +153,9 @@
 }
 
 .director-chip {
-  background: rgba(139, 92, 246, 0.15);
-  color: #8b5cf6;
-  border: 1px solid rgba(139, 92, 246, 0.3);
+  background: rgba(255, 107, 53, 0.15);
+  color: var(--color-primary, #ff6b35);
+  border: 1px solid rgba(255, 107, 53, 0.3);
 }
 
 .remove-chip {
@@ -165,13 +165,16 @@
   padding: 0.125rem;
   background: transparent;
   border: none;
+  color: var(--color-primary, #ff6b35);
   cursor: pointer;
   border-radius: var(--radius-full);
-  transition: background var(--transition-fast);
+  transition: all var(--transition-fast);
 }
 
 .remove-chip:hover {
-  background: rgba(0, 0, 0, 0.1);
+  background: rgba(255, 107, 53, 0.2);
+  color: var(--color-secondary, #ff8c42);
+  transform: scale(1.1);
 }
 
 .clear-filters-button {
@@ -203,6 +206,63 @@
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: var(--spacing-xl);
+}
+
+/* Additional Filters */
+.additional-filters {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--spacing-lg);
+  margin-top: var(--spacing-xl);
+  padding-top: var(--spacing-xl);
+  border-top: 1px solid var(--color-border);
+}
+
+.filter-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.filter-input-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+.filter-input-label .material-icons {
+  font-size: 1.125rem;
+  color: var(--color-primary);
+}
+
+.filter-number-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: var(--color-bg-primary);
+  border: 1px solid var(--color-border);
+  border-radius: 0.75rem;
+  color: var(--color-text);
+  font-size: 0.9375rem;
+  transition: all 0.2s ease;
+}
+
+.filter-number-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  background: var(--color-bg-tertiary);
+  box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
+}
+
+.filter-number-input::placeholder {
+  color: var(--color-text-muted);
+}
+
+.filter-number-input::-webkit-inner-spin-button,
+.filter-number-input::-webkit-outer-spin-button {
+  opacity: 1;
 }
 
 .filter-column {
@@ -379,6 +439,10 @@
     grid-template-columns: repeat(2, 1fr);
   }
 
+  .additional-filters {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
   .movies-grid {
     grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
   }
@@ -401,6 +465,11 @@
   .filter-columns {
     grid-template-columns: 1fr;
     gap: var(--spacing-lg);
+  }
+
+  .additional-filters {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-md);
   }
 
   .movies-grid {

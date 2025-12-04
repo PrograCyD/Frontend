@@ -185,6 +185,76 @@
             }
           </div>
         </div>
+
+        <!-- Additional Filters Row -->
+        <div class="additional-filters">
+          <!-- Year From -->
+          <div class="filter-input-group">
+            <label class="filter-input-label">
+              <span class="material-icons">calendar_today</span>
+              Año Desde
+            </label>
+            <input
+              type="number"
+              [value]="yearFrom() || ''"
+              (input)="onYearFromChange($event)"
+              placeholder="Ej: 2000"
+              min="1900"
+              max="2100"
+              class="filter-number-input"
+            />
+          </div>
+
+          <!-- Year To -->
+          <div class="filter-input-group">
+            <label class="filter-input-label">
+              <span class="material-icons">event</span>
+              Año Hasta
+            </label>
+            <input
+              type="number"
+              [value]="yearTo() || ''"
+              (input)="onYearToChange($event)"
+              placeholder="Ej: 2024"
+              min="1900"
+              max="2100"
+              class="filter-number-input"
+            />
+          </div>
+
+          <!-- Limit -->
+          <div class="filter-input-group">
+            <label class="filter-input-label">
+              <span class="material-icons">format_list_numbered</span>
+              Límite
+            </label>
+            <input
+              type="number"
+              [value]="limit()"
+              (input)="onLimitChange($event)"
+              placeholder="100"
+              min="1"
+              max="1000"
+              class="filter-number-input"
+            />
+          </div>
+
+          <!-- Offset -->
+          <div class="filter-input-group">
+            <label class="filter-input-label">
+              <span class="material-icons">skip_next</span>
+              Offset
+            </label>
+            <input
+              type="number"
+              [value]="offset()"
+              (input)="onOffsetChange($event)"
+              placeholder="0"
+              min="0"
+              class="filter-number-input"
+            />
+          </div>
+        </div>
       </div>
     }
   </div>

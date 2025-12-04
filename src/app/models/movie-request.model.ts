@@ -27,7 +27,14 @@ export interface MovieRequestData {
   };
   genomeTags?: string[];
   userTags?: string[];
-  apiLink?: string; // Link de TMDB API para extraer datos
+  posterUrl?: string;
+  overview?: string;
+  cast?: string; // Comma-separated actor names
+  castDetails?: Array<{ name: string; imageUrl?: string }>; // Cast with images
+  director?: string;
+  runtime?: number; // Duration in minutes
+  budget?: number;
+  revenue?: number;
   jsonData?: string; // JSON completo de la película
 }
 

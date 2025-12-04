@@ -1,6 +1,7 @@
 import { Component, OnInit, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { AdminService } from '../../../services/admin.service';
 import { MovieService } from '../../../services/movie.service';
 import { MovieRequestService } from '../../../services/movie-request.service';
@@ -49,8 +50,11 @@ export class AdminManagementComponent implements OnInit {
 
   showMovieForm = signal(false);
   isEditingMovie = signal(false);
-  formInputMode = signal<'manual' | 'json'>('manual'); // Modo del formulario
+  formInputMode = signal<'manual' | 'url'>('manual'); // Modo del formulario
   genreDropdownOpen = signal(false); // Controla si el dropdown de géneros está abierto
+  isLoadingFromUrl = signal(false);
+  urlImportError = signal<string | null>(null);
+  urlImportSuccess = signal(false);
   movieForm = signal<{
     movieId?: number;
     iIdx?: number;
@@ -94,6 +98,7 @@ export class AdminManagementComponent implements OnInit {
     budget?: number;
     revenue?: number;
     // Campo para JSON completo
+    importUrl?: string; // URL para importar datos
     jsonData?: string;
   }>({
     title: '',
@@ -117,6 +122,7 @@ export class AdminManagementComponent implements OnInit {
     movieLensLink: '',
     imdbLink: '',
     tmdbLink: '',
+    importUrl: '',
     jsonData: ''
   });
   editingMovieId = signal<number | null>(null);
@@ -188,6 +194,7 @@ export class AdminManagementComponent implements OnInit {
   private movieService = inject(MovieService);
   private movieRequestService = inject(MovieRequestService);
   private confirmationService = inject(ConfirmationService);
+  private router = inject(Router);
 
   // ============================================
   // REMAP TAB
@@ -397,7 +404,53 @@ export class AdminManagementComponent implements OnInit {
       movieLensLink: '',
       imdbLink: '',
       tmdbLink: '',
+      importUrl: '',
       jsonData: ''
+    });
+    this.urlImportError.set(null);
+    this.urlImportSuccess.set(false);
+  }
+
+  importFromUrl(): void {
+    const url = this.movieForm().importUrl?.trim();
+    if (!url) return;
+
+    this.isLoadingFromUrl.set(true);
+    this.urlImportError.set(null);
+    this.urlImportSuccess.set(false);
+
+    // Llamar al servicio de admin para obtener los datos desde la URL
+    this.adminService.fetchMovieFromUrl(url).subscribe({
+      next: (movieData) => {
+        // Rellenar el formulario con los datos obtenidos
+        this.movieForm.update(form => ({
+          ...form,
+          title: movieData.title || '',
+          year: movieData.year || new Date().getFullYear(),
+          genres: movieData.genres || [],
+          overview: movieData.externalData?.overview || '',
+          posterUrl: movieData.externalData?.posterUrl || '',
+          director: movieData.externalData?.director || '',
+          runtime: movieData.externalData?.runtime,
+          budget: movieData.externalData?.budget,
+          revenue: movieData.externalData?.revenue,
+          castInput: movieData.externalData?.cast?.map(c => c.name).join(', ') || '',
+          imdbLink: movieData.links?.imdb || '',
+          tmdbLink: movieData.links?.tmdb || '',
+          movieLensLink: movieData.links?.movielens || ''
+        }));
+
+        this.isLoadingFromUrl.set(false);
+        this.urlImportSuccess.set(true);
+      },
+      error: (err) => {
+        console.error('Error importing from URL:', err);
+        this.isLoadingFromUrl.set(false);
+        this.urlImportError.set(
+          err.error?.message ||
+          'No se pudieron obtener los datos de la URL. Verifica que sea una URL válida de TMDb, IMDb o MovieLens.'
+        );
+      }
     });
   }
 
@@ -438,26 +491,33 @@ export class AdminManagementComponent implements OnInit {
     let movieData: any;
 
     // Procesar según el modo de entrada
-    if (mode === 'json') {
-      // Modo JSON: parsear el JSON ingresado
-      if (!form.jsonData || form.jsonData.trim() === '') {
-        alert('Por favor ingresa un JSON válido');
+    if (mode === 'url') {
+      // Modo URL: los datos ya están cargados en el formulario
+      if (!form.title || !form.genres || form.genres.length === 0) {
+        alert('Por favor completa al menos el título y selecciona al menos un género');
         return;
       }
 
-      try {
-        movieData = JSON.parse(form.jsonData);
-
-        // Validar campos mínimos
-        if (!movieData.title || !movieData.genres || movieData.genres.length === 0) {
-          alert('El JSON debe incluir al menos title y genres');
-          return;
+      // Construir objeto movie con la estructura completa
+      movieData = {
+        title: form.title,
+        year: form.year,
+        genres: form.genres,
+        links: {
+          movielens: form.movieLensLink || undefined,
+          imdb: form.imdbLink || undefined,
+          tmdb: form.tmdbLink || undefined
+        },
+        externalData: {
+          posterUrl: form.posterUrl || undefined,
+          overview: form.overview || undefined,
+          director: form.director || undefined,
+          runtime: form.runtime || undefined,
+          budget: form.budget || undefined,
+          revenue: form.revenue || undefined,
+          cast: form.castInput ? form.castInput.split(',').map(name => ({ name: name.trim() })) : undefined
         }
-      } catch (error) {
-        alert('JSON inválido. Por favor verifica el formato.');
-        console.error('JSON parse error:', error);
-        return;
-      }
+      };
     } else {
       // Modo Manual: construir el objeto desde los campos del formulario
       if (!form.title || !form.genres || form.genres.length === 0) {
@@ -553,6 +613,10 @@ export class AdminManagementComponent implements OnInit {
         }
       });
     }
+  }
+
+  viewMovie(movieId: number): void {
+    this.router.navigate(['/movies', movieId]);
   }
 
   async deleteMovie(movieId: number, title: string): Promise<void> {
