@@ -4,6 +4,13 @@ import { adminGuard } from './core/guards/admin.guard';
 import { guestGuard } from './core/guards/guest.guard';
 
 export const routes: Routes = [
+  // Redirección inicial
+  {
+    path: '',
+    redirectTo: 'login',
+    pathMatch: 'full'
+  },
+
   // Rutas públicas de autenticación (solo para invitados)
   {
     path: 'login',
@@ -21,11 +28,6 @@ export const routes: Routes = [
     path: '',
     loadComponent: () => import('./pages/home/home.component').then(m => m.HomeComponent),
     children: [
-      {
-        path: '',
-        redirectTo: 'home',
-        pathMatch: 'full'
-      },
       {
         path: 'home',
         loadComponent: () => import('./features/home/home-welcome/home-welcome.component').then(m => m.HomeWelcomeComponent)

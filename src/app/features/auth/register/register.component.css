@@ -207,8 +207,60 @@ label {
   color: var(--color-text-primary);
 }
 
+label .material-icons {
+  color: var(--color-text-tertiary);
+  font-size: 16px;
+}
+
 label svg {
   color: var(--color-text-tertiary);
+}
+
+.error-text .material-icons {
+  font-size: 14px;
+}
+
+.submit-btn .material-icons {
+  font-size: 20px;
+}
+
+.alert .material-icons {
+  font-size: 20px;
+}
+
+.password-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-input-wrapper input {
+  padding-right: 3rem;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 0.75rem;
+  background: none;
+  border: none;
+  color: var(--color-text-tertiary);
+  cursor: pointer;
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  transition: all 0.2s ease;
+}
+
+.password-toggle:hover {
+  color: var(--color-primary);
+  background: rgba(255, 107, 53, 0.1);
+}
+
+.password-toggle:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.2);
 }
 
 input {

@@ -8,9 +8,7 @@
         <div class="hero-metadata">
           @if (featured.voteAverage) {
             <span class="hero-rating">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-              </svg>
+              <span class="material-icons">star</span>
               {{ featured.voteAverage.toFixed(1) }}
             </span>
           }
@@ -41,11 +39,7 @@
 
         <div class="hero-actions">
           <button class="btn btn-primary" (click)="viewFeaturedMovieDetails()">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10"/>
-              <path d="M12 16v-4"/>
-              <path d="M12 8h.01"/>
-            </svg>
+            <span class="material-icons">info</span>
             Ver Detalles
           </button>
         </div>

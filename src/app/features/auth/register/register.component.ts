@@ -21,6 +21,8 @@ export class RegisterComponent {
   isLoading = signal(false);
   errorMessage = signal('');
   successMessage = signal('');
+  showPassword = signal(false);
+  showConfirmPassword = signal(false);
 
   constructor() {
     this.registerForm = this.fb.group({
@@ -29,6 +31,14 @@ export class RegisterComponent {
       password: ['', [Validators.required, Validators.minLength(6)]],
       confirmPassword: ['', [Validators.required]]
     }, { validators: this.passwordMatchValidator });
+  }
+
+  togglePasswordVisibility(): void {
+    this.showPassword.update(value => !value);
+  }
+
+  toggleConfirmPasswordVisibility(): void {
+    this.showConfirmPassword.update(value => !value);
   }
 
   passwordMatchValidator(form: FormGroup) {

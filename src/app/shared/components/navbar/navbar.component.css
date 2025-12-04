@@ -102,10 +102,23 @@
   border-radius: 2px;
 }
 
+.nav-link .material-icons {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
 .nav-link svg {
   width: 18px;
   height: 18px;
   flex-shrink: 0;
+}
+
+.dropdown-item .material-icons {
+  font-size: 18px;
+}
+
+.logo .material-icons {
+  color: var(--primary);
 }
 
 /* ===================================
@@ -342,8 +355,12 @@
 }
 
 .mobile-menu-toggle:hover {
-  background-color: var(--muted);
+  background-color: rgba(255, 107, 53, 0.1);
   color: var(--primary);
+}
+
+.mobile-menu-toggle .material-icons {
+  font-size: 24px;
 }
 
 /* ===================================
