@@ -1,6 +1,9 @@
 <div class="admin-management-container">
   <header class="header">
-    <h1>⚙️ Panel de Administración</h1>
+    <h1>
+      <span class="material-icons">settings</span>
+      Panel de Administración
+    </h1>
     <p class="subtitle">Gestiona películas, calificaciones y base de datos</p>
   </header>
 
@@ -10,19 +13,19 @@
       class="tab-button"
       [class.active]="activeTab() === 'movies'"
       (click)="setActiveTab('movies')">
-      🎬 Películas
+      <span class="material-icons">movie</span> Películas
     </button>
     <button
       class="tab-button"
       [class.active]="activeTab() === 'ratings'"
       (click)="setActiveTab('ratings')">
-      ⭐ Calificaciones
+      <span class="material-icons">star</span> Calificaciones
     </button>
     <button
       class="tab-button"
       [class.active]="activeTab() === 'requests'"
       (click)="setActiveTab('requests')">
-      📥 Solicitudes
+      <span class="material-icons">inbox</span> Solicitudes
       @if (pendingRequestsCount() > 0) {
         <span class="badge">{{ pendingRequestsCount() }}</span>
       }
@@ -31,7 +34,16 @@
       class="tab-button"
       [class.active]="activeTab() === 'remap'"
       (click)="setActiveTab('remap')">
-      🗄️ Remapeo BD
+      <span class="material-icons">storage</span> Remapeo BD
+    </button>
+    <button
+      class="tab-button"
+      [class.active]="activeTab() === 'similarities'"
+      (click)="setActiveTab('similarities')">
+      <span class="material-icons">hub</span> Similitudes
+      @if (pendingSimilaritiesCount() > 0) {
+        <span class="badge">{{ pendingSimilaritiesCount() }}</span>
+      }
     </button>
   </div>
 
@@ -41,7 +53,8 @@
       <div class="section-header">
         <h2>Gestión de Películas</h2>
         <button class="btn-primary" (click)="openAddMovieForm()">
-          ➕ Agregar Película
+          <span class="material-icons">add_circle</span>
+          Agregar Película
         </button>
       </div>
 
@@ -97,124 +110,322 @@
       <!-- Movie Form -->
       @if (showMovieForm()) {
         <div class="form-modal-overlay" (click)="showMovieForm.set(false)">
-          <div class="form-modal" (click)="$event.stopPropagation()">
+          <div class="form-modal form-modal-large" (click)="$event.stopPropagation()">
             <h3>{{ isEditingMovie() ? 'Editar Película' : 'Agregar Nueva Película' }}</h3>
+
+            <!-- Form Input Mode Tabs -->
+            <div class="form-tabs">
+              <button
+                type="button"
+                class="form-tab"
+                [class.active]="formInputMode() === 'manual'"
+                (click)="formInputMode.set('manual')">
+                <span class="material-icons">edit</span>
+                Entrada Manual
+              </button>
+              <button
+                type="button"
+                class="form-tab"
+                [class.active]="formInputMode() === 'json'"
+                (click)="formInputMode.set('json')">
+                <span class="material-icons">code</span>
+                Importar JSON
+              </button>
+            </div>
 
             <form (ngSubmit)="submitMovieForm()">
               <div class="form-scroll">
-                <div class="form-group">
-                  <label>Título *</label>
-                  <input
-                    type="text"
-                    [(ngModel)]="movieForm().title"
-                    name="title"
-                    class="form-control"
-                    placeholder="Título de la película"
-                    required>
-                </div>
 
-                <div class="form-group">
-                  <label>Año *</label>
-                  <input
-                    type="number"
-                    [(ngModel)]="movieForm().year"
-                    name="year"
-                    class="form-control"
-                    min="1800"
-                    [max]="2100"
-                    required>
-                </div>
+                <!-- MANUAL INPUT MODE -->
+                @if (formInputMode() === 'manual') {
+                  <!-- Basic Information -->
+                  <div class="form-section">
+                    <h4><span class="material-icons">info</span> Información Básica</h4>
 
-                <div class="form-group">
-                  <label>Géneros * (Selecciona al menos uno)</label>
-                  <div class="genres-grid">
-                    @for (genre of availableGenres; track genre) {
-                      <label class="genre-checkbox">
+                    <div class="form-row">
+                      <div class="form-group">
+                        <label>Título *</label>
                         <input
-                          type="checkbox"
-                          [checked]="movieForm().genres.includes(genre)"
-                          (change)="toggleMovieGenre(genre)">
-                        <span>{{ genre }}</span>
-                      </label>
-                    }
-                  </div>
-                </div>
+                          type="text"
+                          [(ngModel)]="movieForm().title"
+                          name="title"
+                          class="form-control"
+                          placeholder="Título de la película"
+                          required>
+                      </div>
 
-                <div class="form-section">
-                  <h4>Enlaces Externos</h4>
-                  <div class="form-group">
-                    <label>MovieLens Link</label>
-                    <input
-                      type="text"
-                      [(ngModel)]="movieForm().movieLensLink"
-                      name="movieLensLink"
-                      class="form-control"
-                      placeholder="https://movielens.org/movies/...">
-                  </div>
-                  <div class="form-group">
-                    <label>IMDB Link</label>
-                    <input
-                      type="text"
-                      [(ngModel)]="movieForm().imdbLink"
-                      name="imdbLink"
-                      class="form-control"
-                      placeholder="https://www.imdb.com/title/tt...">
-                  </div>
-                  <div class="form-group">
-                    <label>TMDB Link</label>
-                    <input
-                      type="text"
-                      [(ngModel)]="movieForm().tmdbLink"
-                      name="tmdbLink"
-                      class="form-control"
-                      placeholder="https://www.themoviedb.org/movie/...">
-                  </div>
-                </div>
+                      <div class="form-group">
+                        <label>Año *</label>
+                        <input
+                          type="number"
+                          [(ngModel)]="movieForm().year"
+                          name="year"
+                          class="form-control"
+                          min="1800"
+                          [max]="2100"
+                          required>
+                      </div>
+                    </div>
 
-                <div class="form-section">
-                  <h4>Tags</h4>
-                  <div class="form-group">
-                    <label>Genome Tags (separados por comas)</label>
-                    <input
-                      type="text"
-                      [(ngModel)]="movieForm().genomeTags"
-                      name="genomeTags"
-                      class="form-control"
-                      placeholder="action, thriller, suspense">
-                  </div>
-                  <div class="form-group">
-                    <label>User Tags (separados por comas)</label>
-                    <input
-                      type="text"
-                      [(ngModel)]="movieForm().userTags"
-                      name="userTags"
-                      class="form-control"
-                      placeholder="must watch, award winner">
-                  </div>
-                </div>
+                    <div class="form-group">
+                      <label>Sinopsis</label>
+                      <textarea
+                        [(ngModel)]="movieForm().overview"
+                        name="overview"
+                        class="form-control"
+                        rows="4"
+                        placeholder="Descripción de la película..."></textarea>
+                    </div>
 
-                <div class="form-section">
-                  <h4>Importar Datos (Opcional)</h4>
-                  <div class="form-group">
-                    <label>API Link de TMDB</label>
-                    <input
-                      type="text"
-                      [(ngModel)]="movieForm().apiLink"
-                      name="apiLink"
-                      class="form-control"
-                      placeholder="https://api.themoviedb.org/3/movie/...">
-                    <small>Para extraer automáticamente la información de la película</small>
+                    <div class="form-group">
+                      <label>Géneros * (Selecciona al menos uno)</label>
+                      <div class="genre-dropdown">
+                        <button
+                          type="button"
+                          class="genre-dropdown-toggle"
+                          (click)="toggleGenreDropdown()">
+                          <span>{{ getSelectedGenresText() }}</span>
+                          <span class="material-icons">{{ genreDropdownOpen() ? 'expand_less' : 'expand_more' }}</span>
+                        </button>
+                        @if (genreDropdownOpen()) {
+                          <div class="genre-dropdown-menu">
+                            @for (genre of availableGenres; track genre) {
+                              <label class="genre-dropdown-item">
+                                <input
+                                  type="checkbox"
+                                  [checked]="movieForm().genres.includes(genre)"
+                                  (change)="toggleMovieGenre(genre)">
+                                <span>{{ genre }}</span>
+                              </label>
+                            }
+                          </div>
+                        }
+                      </div>
+                      @if (movieForm().genres.length > 0) {
+                        <div class="selected-genres">
+                          @for (genre of movieForm().genres; track genre) {
+                            <span class="selected-genre-badge">
+                              {{ genre }}
+                              <button
+                                type="button"
+                                class="remove-genre"
+                                (click)="toggleMovieGenre(genre)"
+                                aria-label="Remover género">
+                                <span class="material-icons">close</span>
+                              </button>
+                            </span>
+                          }
+                        </div>
+                      }
+                    </div>
                   </div>
-                  <div class="form-group">
-                    <label>O importar JSON directamente</label>
-                    <textarea
-                      [(ngModel)]="movieForm().jsonData"
-                      name="jsonData"
-                      class="form-control"
-                      rows="6"
-                      placeholder='{"title": "Movie Name", "year": 2024, ...}'></textarea>
+
+                  <!-- Production Details -->
+                  <div class="form-section">
+                    <h4><span class="material-icons">movie_creation</span> Detalles de Producción</h4>
+
+                    <div class="form-row">
+                      <div class="form-group">
+                        <label>Director</label>
+                        <input
+                          type="text"
+                          [(ngModel)]="movieForm().director"
+                          name="director"
+                          class="form-control"
+                          placeholder="Nombre del director">
+                      </div>
+
+                      <div class="form-group">
+                        <label>Duración (minutos)</label>
+                        <input
+                          type="number"
+                          [(ngModel)]="movieForm().runtime"
+                          name="runtime"
+                          class="form-control"
+                          min="1"
+                          placeholder="120">
+                      </div>
+                    </div>
+
+                    <div class="form-row">
+                      <div class="form-group">
+                        <label>Presupuesto ($)</label>
+                        <input
+                          type="number"
+                          [(ngModel)]="movieForm().budget"
+                          name="budget"
+                          class="form-control"
+                          min="0"
+                          placeholder="30000000">
+                      </div>
+
+                      <div class="form-group">
+                        <label>Recaudación ($)</label>
+                        <input
+                          type="number"
+                          [(ngModel)]="movieForm().revenue"
+                          name="revenue"
+                          class="form-control"
+                          min="0"
+                          placeholder="394436586">
+                      </div>
+                    </div>
+
+                    <div class="form-group">
+                      <label>Elenco (nombres separados por comas)</label>
+                      <input
+                        type="text"
+                        [(ngModel)]="movieForm().castInput"
+                        name="castInput"
+                        class="form-control"
+                        placeholder="Tom Hanks, Tim Allen, Don Rickles">
+                      <small>Ej: Actor1, Actor2, Actor3...</small>
+                    </div>
+
+                    <div class="form-group">
+                      <label>URLs de fotos del elenco (separadas por comas)</label>
+                      <input
+                        type="text"
+                        [(ngModel)]="movieForm().castUrlsInput"
+                        name="castUrlsInput"
+                        class="form-control"
+                        placeholder="https://image.tmdb.org/t/p/w185/actor1.jpg, https://...">
+                      <small>URLs en el mismo orden que los nombres del elenco</small>
+                    </div>
                   </div>
-                </div>
+
+                  <!-- Links -->
+                  <div class="form-section">
+                    <h4><span class="material-icons">link</span> Enlaces Externos</h4>
+
+                    <div class="form-group">
+                      <label>MovieLens URL</label>
+                      <input
+                        type="text"
+                        [(ngModel)]="movieForm().movieLensLink"
+                        name="movieLensLink"
+                        class="form-control"
+                        placeholder="https://movielens.org/movies/1">
+                    </div>
+
+                    <div class="form-group">
+                      <label>IMDB URL</label>
+                      <input
+                        type="text"
+                        [(ngModel)]="movieForm().imdbLink"
+                        name="imdbLink"
+                        class="form-control"
+                        placeholder="http://www.imdb.com/title/tt0114709/">
+                    </div>
+
+                    <div class="form-group">
+                      <label>TMDB URL</label>
+                      <input
+                        type="text"
+                        [(ngModel)]="movieForm().tmdbLink"
+                        name="tmdbLink"
+                        class="form-control"
+                        placeholder="https://www.themoviedb.org/movie/862">
+                    </div>
+
+                    <div class="form-group">
+                      <label>URL del Poster</label>
+                      <input
+                        type="text"
+                        [(ngModel)]="movieForm().posterUrl"
+                        name="posterUrl"
+                        class="form-control"
+                        placeholder="https://image.tmdb.org/t/p/w500/...">
+                    </div>
+                  </div>
+
+                  <!-- Tags -->
+                  <div class="form-section">
+                    <h4><span class="material-icons">label</span> Etiquetas</h4>
+
+                    <div class="form-group">
+                      <label>Genome Tags (separados por comas)</label>
+                      <input
+                        type="text"
+                        [(ngModel)]="movieForm().genomeTagsInput"
+                        name="genomeTagsInput"
+                        class="form-control"
+                        placeholder="toys, computer animation, pixar animation">
+                      <small>Las etiquetas más relevantes para clasificar la película</small>
+                    </div>
+
+                    <div class="form-group">
+                      <label>User Tags (separados por comas)</label>
+                      <input
+                        type="text"
+                        [(ngModel)]="movieForm().userTagsInput"
+                        name="userTagsInput"
+                        class="form-control"
+                        placeholder="pixar, animation, disney, funny">
+                      <small>Etiquetas definidas por usuarios</small>
+                    </div>
+                  </div>
+                }
+
+                <!-- JSON INPUT MODE -->
+                @if (formInputMode() === 'json') {
+                  <div class="form-section">
+                    <h4><span class="material-icons">code</span> Importar JSON Completo</h4>
+
+                    <div class="form-group">
+                      <label>Pega el JSON de la película</label>
+                      <textarea
+                        [(ngModel)]="movieForm().jsonData"
+                        name="jsonData"
+                        class="form-control json-input"
+                        rows="20"
+                        placeholder='{"movieId":1,"title":"Toy Story","year":1995,"genres":["Adventure","Animation"],...}'
+                        spellcheck="false"></textarea>
+                      <small>
+                        <strong>Nota:</strong> El JSON debe seguir la estructura del modelo de película.
+                        Incluye campos como: movieId, title, year, genres, links, genomeTags, userTags, ratingStats, externalData, etc.
+                      </small>
+                    </div>
+
+                    <div class="json-help">
+                      <details>
+                        <summary>📖 Ver ejemplo de estructura JSON</summary>
+                        <pre><code>{{ '{' }}
+  "movieId": 1,
+  "title": "Toy Story",
+  "year": 1995,
+  "genres": ["Adventure", "Animation", "Children"],
+  "links": {{ '{' }}
+    "movielens": "https://movielens.org/movies/1",
+    "imdb": "http://www.imdb.com/title/tt0114709/",
+    "tmdb": "https://www.themoviedb.org/movie/862"
+  {{ '}' }},
+  "genomeTags": [
+    {{ '{' }}"tag": "toys", "relevance": 0.99925{{ '}' }},
+    {{ '{' }}"tag": "computer animation", "relevance": 0.99875{{ '}' }}
+  ],
+  "userTags": ["pixar", "animation", "disney"],
+  "ratingStats": {{ '{' }}
+    "average": 3.89,
+    "count": 57309
+  {{ '}' }},
+  "externalData": {{ '{' }}
+    "posterUrl": "https://image.tmdb.org/t/p/w500/...",
+    "overview": "Led by Woody, Andy's toys live happily...",
+    "cast": [
+      {{ '{' }}"name": "Tom Hanks", "profileUrl": "https://..."{{ '}' }}
+    ],
+    "director": "John Lasseter",
+    "runtime": 81,
+    "budget": 30000000,
+    "revenue": 394436586
+  {{ '}' }}
+{{ '}' }}</code></pre>
+                      </details>
+                    </div>
+                  </div>
+                }
+
               </div>
 
               <div class="form-actions">
@@ -270,10 +481,10 @@
                   <td>
                     <div class="actions-cell">
                       <button class="btn-small btn-edit" (click)="openEditMovieForm(movie)">
-                        ✏️
+                        <span class="material-icons">edit</span>
                       </button>
                       <button class="btn-small btn-delete" (click)="deleteMovie(movie.movieId, movie.title)">
-                        🗑️
+                        <span class="material-icons">delete</span>
                       </button>
                     </div>
                   </td>
@@ -349,11 +560,11 @@
               (ngModelChange)="onRatingsFilterChange()"
               class="form-control">
               <option [value]="0">Todos</option>
-              <option [value]="1">⭐ 1+</option>
-              <option [value]="2">⭐ 2+</option>
-              <option [value]="3">⭐ 3+</option>
-              <option [value]="4">⭐ 4+</option>
-              <option [value]="5">⭐ 5</option>
+              <option [value]="1">★ 1+</option>
+              <option [value]="2">★ 2+</option>
+              <option [value]="3">★ 3+</option>
+              <option [value]="4">★ 4+</option>
+              <option [value]="5">★ 5</option>
             </select>
           </div>
         </div>
@@ -450,12 +661,12 @@
                   <td>
                     <div class="actions-cell">
                       <button class="btn-small btn-edit" (click)="openEditRatingForm(rating)">
-                        ✏️
+                        <span class="material-icons">edit</span>
                       </button>
                       <button
                         class="btn-small btn-delete"
                         (click)="deleteRating(rating.userId, rating.movieId, rating.userName || getUserName(rating.userId), rating.movieTitle || getMovieTitle(rating.movieId))">
-                        🗑️
+                        <span class="material-icons">delete</span>
                       </button>
                     </div>
                   </td>
@@ -490,14 +701,14 @@
   <!-- REQUESTS TAB -->
   @if (activeTab() === 'requests') {
     <div class="tab-content">
-      <h2>📋 Gestión de Solicitudes</h2>
+      <h2><span class="material-icons">assignment</span> Gestión de Solicitudes</h2>
 
       <!-- Filters -->
       <div class="requests-filters">
         <button
           [class.active]="requestsFilter() === 'pending'"
           (click)="setRequestsFilter('pending')">
-          ⏳ Pendientes
+          <span class="material-icons">schedule</span> Pendientes
           @if (pendingRequestsCount() > 0) {
             <span class="badge">{{ pendingRequestsCount() }}</span>
           }
@@ -505,17 +716,17 @@
         <button
           [class.active]="requestsFilter() === 'approved'"
           (click)="setRequestsFilter('approved')">
-          ✅ Aprobadas
+          <span class="material-icons">check_circle</span> Aprobadas
         </button>
         <button
           [class.active]="requestsFilter() === 'rejected'"
           (click)="setRequestsFilter('rejected')">
-          ❌ Rechazadas
+          <span class="material-icons">cancel</span> Rechazadas
         </button>
         <button
           [class.active]="requestsFilter() === 'all'"
           (click)="setRequestsFilter('all')">
-          📊 Todas
+          <span class="material-icons">list</span> Todas
         </button>
       </div>
 
@@ -545,7 +756,8 @@
                   </td>
                   <td>
                     <span [class]="'request-type ' + request.requestType">
-                      {{ request.requestType === 'add' ? '➕ Agregar' : '✏️ Editar' }}
+                      <span class="material-icons">{{ request.requestType === 'add' ? 'add' : 'edit' }}</span>
+                      {{ request.requestType === 'add' ? 'Agregar' : 'Editar' }}
                     </span>
                   </td>
                   <td>
@@ -566,9 +778,9 @@
                   </td>
                   <td>
                     <span [class]="'status-badge ' + request.status">
-                      @if (request.status === 'pending') { ⏳ Pendiente }
-                      @if (request.status === 'approved') { ✅ Aprobada }
-                      @if (request.status === 'rejected') { ❌ Rechazada }
+                      @if (request.status === 'pending') { <span class="material-icons">schedule</span> Pendiente }
+                      @if (request.status === 'approved') { <span class="material-icons">check_circle</span> Aprobada }
+                      @if (request.status === 'rejected') { <span class="material-icons">cancel</span> Rechazada }
                     </span>
                   </td>
                   <td>
@@ -585,20 +797,20 @@
                         class="btn-view"
                         (click)="viewRequestDetails(request)"
                         title="Ver detalles">
-                        👁️ Ver
+                        <span class="material-icons">visibility</span> Ver
                       </button>
                       @if (request.status === 'pending') {
                         <button
                           class="btn-approve"
                           (click)="approveRequest(request)"
                           title="Aprobar solicitud">
-                          ✅
+                          <span class="material-icons">check</span>
                         </button>
                         <button
                           class="btn-reject"
                           (click)="rejectRequest(request)"
                           title="Rechazar solicitud">
-                          ❌
+                          <span class="material-icons">close</span>
                         </button>
                       }
                     </div>
@@ -610,7 +822,8 @@
         </div>
       } @else {
         <div class="empty-state">
-          <p>📭 No hay solicitudes {{ requestsFilter() === 'all' ? '' : requestsFilter() === 'pending' ? 'pendientes' : requestsFilter() === 'approved' ? 'aprobadas' : 'rechazadas' }}</p>
+          <span class="material-icons">inbox</span>
+          <p>No hay solicitudes {{ requestsFilter() === 'all' ? '' : requestsFilter() === 'pending' ? 'pendientes' : requestsFilter() === 'approved' ? 'aprobadas' : 'rechazadas' }}</p>
         </div>
       }
     </div>
@@ -625,7 +838,7 @@
         <h2>Detalles de la Solicitud</h2>
 
         <div class="request-detail-section">
-          <h3>📋 Información General</h3>
+          <h3><span class="material-icons">assignment</span> Información General</h3>
           <div class="detail-grid">
             <div class="detail-item">
               <strong>ID:</strong>
@@ -642,7 +855,7 @@
             <div class="detail-item">
               <strong>Estado:</strong>
               <span [class]="'status-badge ' + selectedRequest()!.status">
-                {{ selectedRequest()!.status === 'pending' ? '⏳ Pendiente' : selectedRequest()!.status === 'approved' ? '✅ Aprobada' : '❌ Rechazada' }}
+                {{ selectedRequest()!.status === 'pending' ? 'Pendiente' : selectedRequest()!.status === 'approved' ? 'Aprobada' : 'Rechazada' }}
               </span>
             </div>
             <div class="detail-item">
@@ -665,7 +878,7 @@
         </div>
 
         <div class="request-detail-section">
-          <h3>🎬 Datos de la Película</h3>
+          <h3><span class="material-icons">movie</span> Datos de la Película</h3>
           <div class="movie-detail-grid">
             <div class="detail-item full-width">
               <strong>Título:</strong>
@@ -707,7 +920,7 @@
 
         @if (selectedRequest()!.status === 'pending') {
           <div class="request-detail-section">
-            <h3>✍️ Nota de Revisión (Opcional)</h3>
+            <h3><span class="material-icons">edit_note</span> Nota de Revisión (Opcional)</h3>
             <textarea
               [(ngModel)]="reviewNote"
               placeholder="Agregar nota de revisión..."
@@ -717,10 +930,10 @@
 
           <div class="modal-actions">
             <button class="btn-approve-large" (click)="approveRequest(selectedRequest()!)">
-              ✅ Aprobar Solicitud
+              <span class="material-icons">check_circle</span> Aprobar Solicitud
             </button>
             <button class="btn-reject-large" (click)="rejectRequest(selectedRequest()!)">
-              ❌ Rechazar Solicitud
+              <span class="material-icons">cancel</span> Rechazar Solicitud
             </button>
           </div>
         }
@@ -732,7 +945,7 @@
   @if (activeTab() === 'remap') {
     <div class="tab-content">
       <div class="remap-container">
-        <h2>🗄️ Remapeo de Base de Datos</h2>
+        <h2><span class="material-icons">storage</span> Remapeo de Base de Datos</h2>
 
         <div class="remap-info">
           <h3>¿Qué hace el remapeo?</h3>
@@ -744,7 +957,7 @@
           </ul>
 
           <div class="warning-box">
-            <strong>⚠️ Advertencia:</strong>
+            <strong><span class="material-icons">warning</span> Advertencia:</strong>
             <p>Este proceso puede tardar varios minutos dependiendo del tamaño de la base de datos. Durante el remapeo, el sistema puede experimentar lentitud.</p>
           </div>
         </div>
@@ -755,7 +968,11 @@
               class="btn-danger"
               (click)="confirmRemap()"
               [disabled]="isRemapping()">
-              {{ isRemapping() ? '⏳ Remapeando...' : '🔄 Iniciar Remapeo' }}
+              @if (isRemapping()) {
+                <span class="material-icons">hourglass_empty</span> Remapeando...
+              } @else {
+                <span class="material-icons">refresh</span> Iniciar Remapeo
+              }
             </button>
           </div>
         }
@@ -769,7 +986,10 @@
 
         @if (remapResult()) {
           <div class="remap-result" [class.success]="remapResult()!.success" [class.error]="!remapResult()!.success">
-            <h3>{{ remapResult()!.success ? '✅ Remapeo Exitoso' : '❌ Error en Remapeo' }}</h3>
+            <h3>
+              <span class="material-icons">{{ remapResult()!.success ? 'check_circle' : 'error' }}</span>
+              {{ remapResult()!.success ? 'Remapeo Exitoso' : 'Error en Remapeo' }}
+            </h3>
             <p>{{ remapResult()!.message }}</p>
 
             @if (remapResult()!.affectedMovies !== undefined) {
@@ -792,6 +1012,201 @@
             <button class="btn-primary" (click)="remapResult.set(null)">
               Realizar Otro Remapeo
             </button>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- SIMILARITIES TAB -->
+  @if (activeTab() === 'similarities') {
+    <div class="tab-content">
+      <div class="similarities-container">
+        <h2><span class="material-icons">hub</span> Gestión de Similitudes</h2>
+
+        <!-- Estado de Similitudes -->
+        <div class="similarities-status-card">
+          <h3><span class="material-icons">analytics</span> Estado de Similitudes</h3>
+
+          @if (isLoadingSimilarities()) {
+            <div class="loading-section">
+              <div class="spinner"></div>
+              <p>Cargando estado...</p>
+            </div>
+          } @else {
+            <div class="status-grid">
+              <div class="status-item">
+                <div class="status-icon total">
+                  <span class="material-icons">movie_filter</span>
+                </div>
+                <div class="status-content">
+                  <span class="status-value">{{ similaritiesStatus().totalMovies }}</span>
+                  <span class="status-label">Películas Totales</span>
+                </div>
+              </div>
+
+              <div class="status-item">
+                <div class="status-icon success">
+                  <span class="material-icons">check_circle</span>
+                </div>
+                <div class="status-content">
+                  <span class="status-value">{{ similaritiesStatus().moviesWithSimilarities }}</span>
+                  <span class="status-label">Con Similitudes</span>
+                </div>
+              </div>
+
+              <div class="status-item">
+                <div class="status-icon warning">
+                  <span class="material-icons">pending</span>
+                </div>
+                <div class="status-content">
+                  <span class="status-value">{{ similaritiesStatus().moviesPending }}</span>
+                  <span class="status-label">Pendientes</span>
+                </div>
+              </div>
+
+              <div class="status-item">
+                <div class="status-icon info">
+                  <span class="material-icons">schedule</span>
+                </div>
+                <div class="status-content">
+                  <span class="status-value">
+                    @if (similaritiesStatus().lastCalculated) {
+                      {{ similaritiesStatus().lastCalculated | date:'short' }}
+                    } @else {
+                      Nunca
+                    }
+                  </span>
+                  <span class="status-label">Último Cálculo</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="progress-section">
+              <div class="progress-header">
+                <span>Cobertura de Similitudes</span>
+                <span class="progress-percentage">
+                  {{ ((similaritiesStatus().moviesWithSimilarities / similaritiesStatus().totalMovies) * 100).toFixed(1) }}%
+                </span>
+              </div>
+              <div class="progress-bar">
+                <div
+                  class="progress-fill"
+                  [style.width.%]="(similaritiesStatus().moviesWithSimilarities / similaritiesStatus().totalMovies) * 100">
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- Películas Pendientes -->
+        @if (similaritiesStatus().moviesPending > 0) {
+          <div class="pending-movies-card">
+            <div class="card-header">
+              <h3><span class="material-icons">list</span> Películas Pendientes ({{ pendingMovies().length }})</h3>
+              <button
+                class="btn-primary"
+                (click)="confirmCalculateSimilarities()"
+                [disabled]="isCalculatingSimilarities()">
+                @if (isCalculatingSimilarities()) {
+                  <span class="material-icons">hourglass_empty</span> Calculando...
+                } @else {
+                  <span class="material-icons">calculate</span> Calcular Similitudes
+                }
+              </button>
+            </div>
+
+            @if (isCalculatingSimilarities()) {
+              <div class="calculation-progress">
+                <div class="spinner"></div>
+                <p>Calculando similitudes... Este proceso puede tardar algunos minutos.</p>
+              </div>
+            }
+
+            @if (!isCalculatingSimilarities() && pendingMovies().length > 0) {
+              <div class="pending-movies-table">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Título</th>
+                      <th>Año</th>
+                      <th>Géneros</th>
+                      <th>Estado</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (movie of pendingMovies().slice(0, 10); track movie.movieId) {
+                      <tr>
+                        <td>{{ movie.movieId }}</td>
+                        <td class="movie-title-cell">{{ movie.title }}</td>
+                        <td>{{ movie.year || 'N/A' }}</td>
+                        <td>
+                          <div class="genres-cell">
+                            @for (genre of movie.genres.slice(0, 2); track genre) {
+                              <span class="genre-tag">{{ genre }}</span>
+                            }
+                            @if (movie.genres.length > 2) {
+                              <span class="genre-more">+{{ movie.genres.length - 2 }}</span>
+                            }
+                          </div>
+                        </td>
+                        <td>
+                          <span class="status-badge pending">
+                            <span class="material-icons">pending</span>
+                            Pendiente
+                          </span>
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+
+                @if (pendingMovies().length > 10) {
+                  <div class="table-footer">
+                    <p>Mostrando 10 de {{ pendingMovies().length }} películas pendientes</p>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        }
+
+        <!-- Resultado del Cálculo -->
+        @if (similaritiesResult()) {
+          <div class="calculation-result" [class.success]="similaritiesResult()!.success" [class.error]="!similaritiesResult()!.success">
+            <h3>
+              <span class="material-icons">{{ similaritiesResult()!.success ? 'check_circle' : 'error' }}</span>
+              {{ similaritiesResult()!.success ? 'Cálculo Exitoso' : 'Error en Cálculo' }}
+            </h3>
+            <p>{{ similaritiesResult()!.message }}</p>
+
+            @if (similaritiesResult()!.processedMovies !== undefined) {
+              <div class="result-stats">
+                <div class="stat">
+                  <span class="label">Películas procesadas:</span>
+                  <span class="value">{{ similaritiesResult()!.processedMovies }}</span>
+                </div>
+                <div class="stat">
+                  <span class="label">Duración:</span>
+                  <span class="value">{{ similaritiesResult()!.duration! / 1000 }} segundos</span>
+                </div>
+              </div>
+            }
+
+            <button class="btn-primary" (click)="similaritiesResult.set(null)">
+              Cerrar
+            </button>
+          </div>
+        }
+
+        <!-- Sin Pendientes -->
+        @if (similaritiesStatus().moviesPending === 0 && !isLoadingSimilarities()) {
+          <div class="no-pending-card">
+            <span class="material-icons">check_circle_outline</span>
+            <h3>¡Todas las similitudes están actualizadas!</h3>
+            <p>No hay películas pendientes de mapeo. El sistema está al día.</p>
           </div>
         }
       </div>

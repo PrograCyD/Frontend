@@ -1,0 +1,25 @@
+@if (show) {
+  <div class="modal-overlay" (click)="onOverlayClick()">
+    <div class="modal-content" (click)="stopPropagation($event)" [class]="'modal-' + config.type">
+      <div class="modal-header">
+        @if (config.icon) {
+          <span class="material-icons modal-icon" [class]="'icon-' + config.type">{{ config.icon }}</span>
+        }
+        <h2>{{ config.title }}</h2>
+      </div>
+
+      <div class="modal-body">
+        <p>{{ config.message }}</p>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-cancel" (click)="onCancel()">
+          {{ config.cancelText || 'Cancelar' }}
+        </button>
+        <button class="btn btn-confirm" [class]="'btn-' + config.type" (click)="onConfirm()">
+          {{ config.confirmText || 'Confirmar' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

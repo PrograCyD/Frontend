@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { MovieRequestService } from '../../../services/movie-request.service';
 import { RatingService } from '../../../services/rating.service';
 import { MovieService } from '../../../services/movie.service';
+import { ConfirmationService } from '../../../services/confirmation.service';
 import { MovieRequest, CreateMovieRequestParams, Movie, Rating } from '../../../models';
 import { StarRatingComponent } from '../../../shared/components/star-rating/star-rating.component';
 
@@ -25,6 +26,8 @@ export class UserManagementComponent implements OnInit {
   // Requests tab
   myRequests = signal<MovieRequest[]>([]);
   showRequestForm = signal(false);
+  formInputMode = signal<'manual' | 'json'>('manual');
+  genreDropdownOpen = signal(false);
   requestForm = signal({
     requestType: 'add' as 'add' | 'edit',
     movieId: undefined as number | undefined,
@@ -96,6 +99,7 @@ export class UserManagementComponent implements OnInit {
   private movieRequestService = inject(MovieRequestService);
   private ratingService = inject(RatingService);
   private movieService = inject(MovieService);
+  private confirmationService = inject(ConfirmationService);
 
   ngOnInit(): void {
     this.loadMyRequests();
@@ -161,6 +165,21 @@ export class UserManagementComponent implements OnInit {
       form.genres.push(genre);
     }
     this.requestForm.set({ ...form });
+  }
+
+  toggleGenreDropdown(): void {
+    this.genreDropdownOpen.update(value => !value);
+  }
+
+  getSelectedGenresText(): string {
+    const genres = this.requestForm().genres;
+    if (genres.length === 0) {
+      return 'Selecciona géneros...';
+    }
+    if (genres.length === 1) {
+      return genres[0];
+    }
+    return `${genres.length} géneros seleccionados`;
   }
 
   submitMovieRequest(): void {
@@ -301,10 +320,20 @@ export class UserManagementComponent implements OnInit {
     });
   }
 
-  deleteRating(movieId: number): void {
-    if (!confirm('¿Estás seguro de que deseas eliminar esta calificación?')) {
-      return;
-    }
+  async deleteRating(movieId: number): Promise<void> {
+    const rating = this.myRatings().find(r => r.movieId === movieId);
+    const movieTitle = rating?.movie?.title || 'esta película';
+
+    const confirmed = await this.confirmationService.confirm({
+      title: 'Eliminar calificación',
+      message: `¿Estás seguro de que deseas eliminar tu calificación de "${movieTitle}"?`,
+      confirmText: 'Eliminar',
+      cancelText: 'Cancelar',
+      type: 'danger',
+      icon: 'delete'
+    });
+
+    if (!confirmed) return;
 
     this.ratingService.deleteRating(movieId).subscribe({
       next: () => {

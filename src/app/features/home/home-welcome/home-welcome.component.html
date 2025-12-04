@@ -53,16 +53,24 @@
   <div class="section-header">
     <h2 class="section-title">Top 10 Películas</h2>
   </div>
-  <div class="top-movies-grid">
+  <button class="carousel-nav-button prev" (click)="scrollCarousel('top', 'left')" #topPrev>
+    <span class="material-icons">chevron_left</span>
+  </button>
+  <div class="top-movies-carousel" #topCarousel>
     @for (movie of topMovies(); track movie.movieId; let idx = $index) {
-      <app-top-movie-card
-        [movie]="movie"
-        [rank]="idx + 1"
-        (movieClick)="onMovieClick(movie)"
-        (ratingChange)="onTopMovieRatingChange($event)">
-      </app-top-movie-card>
+      <div class="top-movie-wrapper">
+        <app-top-movie-card
+          [movie]="movie"
+          [rank]="idx + 1"
+          (movieClick)="onMovieClick(movie)"
+          (ratingChange)="onTopMovieRatingChange($event)">
+        </app-top-movie-card>
+      </div>
     }
   </div>
+  <button class="carousel-nav-button next" (click)="scrollCarousel('top', 'right')" #topNext>
+    <span class="material-icons">chevron_right</span>
+  </button>
 </section>
 
 <!-- Recomendaciones para ti -->
@@ -72,7 +80,10 @@
       <h2 class="section-title">Recomendaciones para ti</h2>
       <a routerLink="/recommendations" class="section-link">Ver más</a>
     </div>
-    <div class="movies-carousel">
+    <button class="carousel-nav-button prev" (click)="scrollCarousel('recommended', 'left')" #recommendedPrev>
+      <span class="material-icons">chevron_left</span>
+    </button>
+    <div class="movies-carousel" #recommendedCarousel>
       @for (movie of recommendedMovies(); track movie.movieId) {
         <app-movie-card
           [movie]="movie"
@@ -81,6 +92,9 @@
         </app-movie-card>
       }
     </div>
+    <button class="carousel-nav-button next" (click)="scrollCarousel('recommended', 'right')" #recommendedNext>
+      <span class="material-icons">chevron_right</span>
+    </button>
   </section>
 }
 
@@ -91,7 +105,10 @@
       <h2 class="section-title">Porque te gusta Acción</h2>
       <a routerLink="/movies" [queryParams]="{genre: 'Acción'}" class="section-link">Ver más</a>
     </div>
-    <div class="movies-carousel">
+    <button class="carousel-nav-button prev" (click)="scrollCarousel('genre', 'left')" #genrePrev>
+      <span class="material-icons">chevron_left</span>
+    </button>
+    <div class="movies-carousel" #genreCarousel>
       @for (movie of genreRecommendations(); track movie.movieId) {
         <app-movie-card
           [movie]="movie"
@@ -100,6 +117,9 @@
         </app-movie-card>
       }
     </div>
+    <button class="carousel-nav-button next" (click)="scrollCarousel('genre', 'right')" #genreNext>
+      <span class="material-icons">chevron_right</span>
+    </button>
   </section>
 }
 
@@ -108,9 +128,11 @@
   <section class="section">
     <div class="section-header">
       <h2 class="section-title">Porque te gustó "must watch"</h2>
-      <a routerLink="/movies" class="section-link">Ver más</a>
     </div>
-    <div class="movies-carousel">
+    <button class="carousel-nav-button prev" (click)="scrollCarousel('liked', 'left')" #likedPrev>
+      <span class="material-icons">chevron_left</span>
+    </button>
+    <div class="movies-carousel" #likedCarousel>
       @for (movie of becauseYouLikedMovies(); track movie.movieId) {
         <app-movie-card
           [movie]="movie"
@@ -119,6 +141,9 @@
         </app-movie-card>
       }
     </div>
+    <button class="carousel-nav-button next" (click)="scrollCarousel('liked', 'right')" #likedNext>
+      <span class="material-icons">chevron_right</span>
+    </button>
   </section>
 }
 

@@ -326,6 +326,7 @@
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   transition: all 0.3s ease;
+  cursor: pointer;
 }
 
 .cast-card:hover {
@@ -399,12 +400,69 @@
 .similar-movies-section {
   padding: 3rem 2rem;
   background: var(--color-bg-primary);
+  position: relative;
 }
 
 .similar-movies-carousel {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  display: flex;
   gap: 1.5rem;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding-bottom: 1rem;
+}
+
+.similar-movies-carousel::-webkit-scrollbar {
+  display: none;
+}
+
+.similar-movies-carousel app-movie-card {
+  flex: 0 0 220px;
+}
+
+.carousel-nav-button {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 107, 53, 0.3);
+  color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  z-index: 10;
+}
+
+.carousel-nav-button:hover:not(:disabled) {
+  background: rgba(255, 107, 53, 0.9);
+  color: white;
+  border-color: var(--color-primary);
+  transform: translateY(-50%) scale(1.1);
+}
+
+.carousel-nav-button:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.carousel-nav-button.prev {
+  left: -24px;
+}
+
+.carousel-nav-button.next {
+  right: -24px;
+}
+
+.carousel-nav-button .material-icons {
+  font-size: 24px;
 }
 
 /* Responsive Design */
@@ -418,8 +476,8 @@
     grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
   }
 
-  .similar-movies-carousel {
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  .similar-movies-carousel app-movie-card {
+    flex: 0 0 180px;
   }
 }
 
@@ -491,8 +549,12 @@
     grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
   }
 
-  .similar-movies-carousel {
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  .similar-movies-carousel app-movie-card {
+    flex: 0 0 140px;
+  }
+
+  .carousel-nav-button {
+    display: none;
   }
 }
 
@@ -547,12 +609,16 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.625rem 1.25rem;
-  border-radius: var(--radius-md);
+  border-radius: 0.75rem;
   font-size: 0.9375rem;
   font-weight: 600;
   text-decoration: none;
   transition: all 0.2s ease;
   border: 2px solid;
+}
+
+.external-link .material-icons {
+  font-size: 20px;
 }
 
 .external-link.movielens {
@@ -565,6 +631,7 @@
   background: rgba(0, 113, 133, 0.2);
   border-color: #00bcd4;
   transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 188, 212, 0.3);
 }
 
 .external-link.imdb {
@@ -577,6 +644,7 @@
   background: rgba(245, 197, 24, 0.2);
   border-color: #f5c518;
   transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(245, 197, 24, 0.3);
 }
 
 .external-link.tmdb {
@@ -589,6 +657,7 @@
   background: rgba(1, 180, 228, 0.2);
   border-color: #01b4e4;
   transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(1, 180, 228, 0.3);
 }
 
 /* Tags Section - Enhanced */

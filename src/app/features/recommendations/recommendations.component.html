@@ -1,0 +1,237 @@
+<div class="recommendations-container">
+  <!-- Header -->
+  <header class="recommendations-header">
+    <div class="header-content">
+      <h1 class="page-title">
+        <span class="material-icons title-icon">auto_awesome</span>
+        Recomendaciones para ti
+      </h1>
+      <p class="page-description">
+        Descubre películas seleccionadas especialmente según tus gustos y preferencias
+      </p>
+    </div>
+
+    <!-- Recommendation Type Info -->
+    @if (getSelectedTypeInfo(); as typeInfo) {
+      <div class="current-filter-info">
+        <span class="material-icons info-icon">{{ typeInfo.icon }}</span>
+        <div class="info-content">
+          <span class="info-label">{{ typeInfo.label }}</span>
+          <span class="info-description">{{ typeInfo.description }}</span>
+        </div>
+      </div>
+    }
+  </header>
+
+  <!-- Filter Bar -->
+  <div class="filter-section">
+    <div class="filter-bar">
+      <!-- Filter Toggle Button -->
+      <button
+        (click)="toggleFilters()"
+        [class.active]="showFilters()"
+        class="filter-toggle-button"
+      >
+        <span class="material-icons">tune</span>
+        <span>Filtros</span>
+        @if (activeFiltersCount() > 0) {
+          <span class="filter-badge">{{ activeFiltersCount() }}</span>
+        }
+      </button>
+
+      <!-- Quick Stats -->
+      <div class="quick-stats">
+        <span class="stat-item">
+          <span class="material-icons">movie</span>
+          {{ filteredRecommendations().length }} películas
+        </span>
+      </div>
+
+      <!-- Clear Filters -->
+      @if (activeFiltersCount() > 0) {
+        <button (click)="clearAllFilters()" class="clear-all-button">
+          <span class="material-icons">clear</span>
+          Limpiar filtros
+        </button>
+      }
+    </div>
+
+    <!-- Filter Panel -->
+    @if (showFilters()) {
+      <div class="filter-panel">
+        <div class="filter-grid">
+          <!-- Recommendation Type Filter -->
+          <div class="filter-column">
+            <button class="filter-dropdown-button" (click)="toggleTypeDropdown()">
+              <span class="dropdown-label">
+                <span class="material-icons">{{ getSelectedTypeInfo()?.icon }}</span>
+                Tipo de Recomendación
+              </span>
+              <span class="material-icons dropdown-icon" [class.open]="showTypeDropdown()">
+                expand_more
+              </span>
+            </button>
+            @if (showTypeDropdown()) {
+              <div class="filter-options">
+                @for (type of recommendationTypes; track type.value) {
+                  <button
+                    class="filter-option-button"
+                    [class.selected]="recommendationType() === type.value"
+                    (click)="setRecommendationType(type.value)">
+                    <span class="material-icons">{{ type.icon }}</span>
+                    <div class="option-content">
+                      <span class="option-label">{{ type.label }}</span>
+                      <span class="option-description">{{ type.description }}</span>
+                    </div>
+                    @if (recommendationType() === type.value) {
+                      <span class="material-icons check-icon">check_circle</span>
+                    }
+                  </button>
+                }
+              </div>
+            }
+          </div>
+
+          <!-- Sort Filter -->
+          <div class="filter-column">
+            <button class="filter-dropdown-button" (click)="toggleSortDropdown()">
+              <span class="dropdown-label">
+                <span class="material-icons">{{ getSelectedSortInfo()?.icon }}</span>
+                Ordenar por
+              </span>
+              <span class="material-icons dropdown-icon" [class.open]="showSortDropdown()">
+                expand_more
+              </span>
+            </button>
+            @if (showSortDropdown()) {
+              <div class="filter-options">
+                @for (sort of sortOptions; track sort.value) {
+                  <button
+                    class="filter-option-button"
+                    [class.selected]="sortBy() === sort.value"
+                    (click)="setSortBy(sort.value)">
+                    <span class="material-icons">{{ sort.icon }}</span>
+                    <span class="option-label">{{ sort.label }}</span>
+                    @if (sortBy() === sort.value) {
+                      <span class="material-icons check-icon">check_circle</span>
+                    }
+                  </button>
+                }
+              </div>
+            }
+          </div>
+
+          <!-- Rating Filter -->
+          <div class="filter-column">
+            <button class="filter-dropdown-button" (click)="toggleRatingDropdown()">
+              <span class="dropdown-label">
+                <span class="material-icons">{{ getSelectedRatingInfo()?.icon }}</span>
+                Calificación mínima
+              </span>
+              <span class="material-icons dropdown-icon" [class.open]="showRatingDropdown()">
+                expand_more
+              </span>
+            </button>
+            @if (showRatingDropdown()) {
+              <div class="filter-options">
+                @for (rating of ratingOptions; track rating.value) {
+                  <button
+                    class="filter-option-button"
+                    [class.selected]="minRating() === rating.value"
+                    (click)="setMinRating(rating.value)">
+                    <span class="material-icons">{{ rating.icon }}</span>
+                    <span class="option-label">{{ rating.label }}</span>
+                    @if (minRating() === rating.value) {
+                      <span class="material-icons check-icon">check_circle</span>
+                    }
+                  </button>
+                }
+              </div>
+            }
+          </div>
+
+          <!-- Genre Filter -->
+          <div class="filter-column">
+            <button class="filter-dropdown-button" (click)="toggleGenreDropdown()">
+              <span class="dropdown-label">
+                <span class="material-icons">category</span>
+                Géneros
+                @if (selectedGenres().length > 0) {
+                  <span class="filter-count">({{ selectedGenres().length }})</span>
+                }
+              </span>
+              <span class="material-icons dropdown-icon" [class.open]="showGenreDropdown()">
+                expand_more
+              </span>
+            </button>
+            @if (showGenreDropdown()) {
+              <div class="filter-options">
+                @for (genre of allGenres(); track genre) {
+                  <label class="filter-option">
+                    <input
+                      type="checkbox"
+                      [checked]="selectedGenres().includes(genre)"
+                      (change)="toggleGenre(genre)"
+                      class="filter-checkbox"
+                    />
+                    <span class="filter-label">{{ genre }}</span>
+                  </label>
+                }
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- Active Filters Display -->
+  @if (activeFiltersCount() > 0 && !showFilters()) {
+    <div class="active-filters-compact">
+      @if (recommendationType() !== 'all') {
+        <span class="filter-chip">
+          <span class="material-icons">{{ getSelectedTypeInfo()?.icon }}</span>
+          {{ getSelectedTypeInfo()?.label }}
+        </span>
+      }
+      @if (sortBy() !== 'relevance') {
+        <span class="filter-chip">
+          <span class="material-icons">{{ getSelectedSortInfo()?.icon }}</span>
+          {{ getSelectedSortInfo()?.label }}
+        </span>
+      }
+      @if (minRating() > 0) {
+        <span class="filter-chip">
+          <span class="material-icons">{{ getSelectedRatingInfo()?.icon }}</span>
+          {{ getSelectedRatingInfo()?.label }}
+        </span>
+      }
+      @for (genre of selectedGenres(); track genre) {
+        <span class="filter-chip genre-chip">
+          {{ genre }}
+        </span>
+      }
+    </div>
+  }
+
+  <!-- Movies Grid -->
+  @if (filteredRecommendations().length > 0) {
+    <div class="movies-grid">
+      @for (movie of filteredRecommendations(); track movie.movieId) {
+        <app-movie-card
+          [movie]="movie"
+          (movieClick)="onMovieClick(movie)">
+        </app-movie-card>
+      }
+    </div>
+  } @else {
+    <div class="empty-state">
+      <span class="material-icons empty-icon">sentiment_dissatisfied</span>
+      <p class="empty-title">No se encontraron recomendaciones</p>
+      <p class="empty-description">Intenta ajustar tus filtros para ver más resultados</p>
+      <button (click)="clearAllFilters()" class="btn-primary">
+        Ver todas las recomendaciones
+      </button>
+    </div>
+  }
+</div>

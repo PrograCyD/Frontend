@@ -208,6 +208,55 @@
 .filter-column {
   display: flex;
   flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.filter-dropdown-button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0.875rem 1rem;
+  background: var(--color-bg-primary);
+  border: 1px solid var(--color-border);
+  border-radius: 0.75rem;
+  color: var(--color-text);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.filter-dropdown-button:hover {
+  border-color: var(--color-primary);
+  background: var(--color-bg-tertiary);
+}
+
+.dropdown-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.dropdown-label .material-icons {
+  font-size: 1.25rem;
+  color: var(--color-primary);
+}
+
+.filter-count {
+  color: var(--color-primary);
+  font-weight: 600;
+  margin-left: 0.25rem;
+}
+
+.dropdown-icon {
+  color: var(--color-text-secondary);
+  font-size: 1.5rem;
+  transition: transform 0.2s ease;
+}
+
+.dropdown-icon.open {
+  transform: rotate(180deg);
 }
 
 .filter-title {
@@ -220,10 +269,14 @@
 .filter-options {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-xs);
+  gap: 0.125rem;
   max-height: 16rem;
   overflow-y: auto;
-  padding-right: var(--spacing-xs);
+  padding: 0.5rem;
+  background: var(--color-bg-primary);
+  border: 1px solid var(--color-border);
+  border-radius: 0.75rem;
+  margin-top: 0.5rem;
 }
 
 /* Custom Scrollbar for Filter Options */
@@ -248,10 +301,10 @@
 .filter-option {
   display: flex;
   align-items: center;
-  gap: var(--spacing-sm);
-  padding: var(--spacing-sm);
+  gap: 0.625rem;
+  padding: 0.5rem 0.625rem;
   cursor: pointer;
-  border-radius: var(--radius-sm);
+  border-radius: 0.5rem;
   transition: background var(--transition-fast);
 }
 
@@ -260,16 +313,19 @@
 }
 
 .filter-checkbox {
-  width: 1rem;
-  height: 1rem;
+  width: 1.125rem;
+  height: 1.125rem;
   cursor: pointer;
   accent-color: var(--color-primary);
+  flex-shrink: 0;
+  margin: 0;
 }
 
 .filter-label {
   color: var(--color-text);
   font-size: 0.9375rem;
   user-select: none;
+  line-height: 1.125rem;
 }
 
 /* Results Info */

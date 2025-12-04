@@ -1,7 +1,7 @@
 import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { MovieExtended } from '../../../models/movie.model';
 import { MovieCardComponent } from '../../../shared/components/movie-card/movie-card.component';
 import { mockMovies } from '../../../data/mock-movies';
@@ -19,6 +19,9 @@ export class MovieExploreComponent implements OnInit {
   selectedCast = signal<string[]>([]);
   selectedDirectors = signal<string[]>([]);
   showFilters = signal(false);
+  showGenreDropdown = signal(false);
+  showCastDropdown = signal(false);
+  showDirectorDropdown = signal(false);
 
   allMovies = signal<MovieExtended[]>([]);
 
@@ -75,10 +78,24 @@ export class MovieExploreComponent implements OnInit {
     this.selectedGenres().length + this.selectedCast().length + this.selectedDirectors().length
   );
 
-  constructor(private router: Router) {}
+  constructor(
+    private router: Router,
+    private route: ActivatedRoute
+  ) {}
 
   ngOnInit(): void {
     this.allMovies.set(mockMovies);
+
+    // Check for query parameters
+    this.route.queryParams.subscribe(params => {
+      if (params['genre']) {
+        this.toggleGenre(params['genre']);
+      }
+      if (params['actor']) {
+        this.toggleCast(params['actor']);
+        this.showFilters.set(true);
+      }
+    });
   }
 
   onSearchChange(event: Event): void {
@@ -88,6 +105,18 @@ export class MovieExploreComponent implements OnInit {
 
   toggleFilters(): void {
     this.showFilters.update(value => !value);
+  }
+
+  toggleGenreDropdown(): void {
+    this.showGenreDropdown.update(value => !value);
+  }
+
+  toggleCastDropdown(): void {
+    this.showCastDropdown.update(value => !value);
+  }
+
+  toggleDirectorDropdown(): void {
+    this.showDirectorDropdown.update(value => !value);
   }
 
   toggleGenre(genre: string): void {

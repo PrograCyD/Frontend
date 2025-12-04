@@ -33,7 +33,8 @@ export class StarRatingComponent {
     }
   }
 
-  onStarClick(star: number): void {
+  onStarClick(event: Event, star: number): void {
+    event.stopPropagation(); // Evitar que el click se propague al card
     if (!this.readonly) {
       this.rating = star;
       this.ratingChange.emit(star);

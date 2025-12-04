@@ -125,41 +125,31 @@
             }
 
             <!-- External Links -->
-            <div class="external-links-section">
-              <h3 class="section-subtitle">Enlaces Externos</h3>
-              <div class="external-links">
-                @if (movie.movieLensId) {
-                  <a [href]="getMovieLensUrl(movie.movieLensId)" target="_blank" rel="noopener noreferrer" class="external-link movielens">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
-                      <polyline points="15 3 21 3 21 9"/>
-                      <line x1="10" y1="14" x2="21" y2="3"/>
-                    </svg>
-                    <span>MovieLens</span>
-                  </a>
-                }
-                @if (movie.imdbId) {
-                  <a [href]="getImdbUrl(movie.imdbId)" target="_blank" rel="noopener noreferrer" class="external-link imdb">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
-                      <polyline points="15 3 21 3 21 9"/>
-                      <line x1="10" y1="14" x2="21" y2="3"/>
-                    </svg>
-                    <span>IMDb</span>
-                  </a>
-                }
-                @if (movie.tmdbId) {
-                  <a [href]="getTmdbUrl(movie.tmdbId)" target="_blank" rel="noopener noreferrer" class="external-link tmdb">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
-                      <polyline points="15 3 21 3 21 9"/>
-                      <line x1="10" y1="14" x2="21" y2="3"/>
-                    </svg>
-                    <span>TMDb</span>
-                  </a>
-                }
+            @if (movie.links && (movie.links.movielens || movie.links.imdb || movie.links.tmdb)) {
+              <div class="external-links-section">
+                <h3 class="section-subtitle">Enlaces Externos</h3>
+                <div class="external-links">
+                  @if (movie.links.movielens) {
+                    <a [href]="movie.links.movielens" target="_blank" rel="noopener noreferrer" class="external-link movielens">
+                      <span class="material-icons">movie</span>
+                      <span>MovieLens</span>
+                    </a>
+                  }
+                  @if (movie.links.imdb) {
+                    <a [href]="movie.links.imdb" target="_blank" rel="noopener noreferrer" class="external-link imdb">
+                      <span class="material-icons">theaters</span>
+                      <span>IMDb</span>
+                    </a>
+                  }
+                  @if (movie.links.tmdb) {
+                    <a [href]="movie.links.tmdb" target="_blank" rel="noopener noreferrer" class="external-link tmdb">
+                      <span class="material-icons">local_movies</span>
+                      <span>TMDb</span>
+                    </a>
+                  }
+                </div>
               </div>
-            </div>
+            }
           </div>
         </div>
       </div>
@@ -170,7 +160,7 @@
           <h2 class="section-title">Reparto</h2>
           <div class="cast-grid">
             @for (actor of movie.cast; track actor) {
-              <div class="cast-card">
+              <div class="cast-card" (click)="onActorClick(actor)">
                 <div class="cast-avatar">
                   <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
@@ -229,7 +219,10 @@
       @if (similarMovies().length > 0) {
         <section class="similar-movies-section">
           <h2 class="section-title">Películas similares</h2>
-          <div class="similar-movies-carousel">
+          <button class="carousel-nav-button prev" (click)="scrollSimilarMovies('left')" #similarPrev>
+            <span class="material-icons">chevron_left</span>
+          </button>
+          <div class="similar-movies-carousel" #similarCarousel>
             @for (similarMovie of similarMovies(); track similarMovie.movieId) {
               <app-movie-card
                 [movie]="similarMovie"
@@ -237,6 +230,9 @@
               </app-movie-card>
             }
           </div>
+          <button class="carousel-nav-button next" (click)="scrollSimilarMovies('right')" #similarNext>
+            <span class="material-icons">chevron_right</span>
+          </button>
         </section>
       }
     </div>

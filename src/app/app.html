@@ -1,2 +1,10 @@
 <!-- Movies App - Angular Standalone Application -->
 <router-outlet />
+
+<!-- Global Confirmation Modal -->
+<app-confirmation-modal
+  [show]="confirmationService.getShowModal()"
+  [config]="confirmationService.getModalConfig()"
+  (confirm)="confirmationService.handleConfirm()"
+  (cancel)="confirmationService.handleCancel()">
+</app-confirmation-modal>

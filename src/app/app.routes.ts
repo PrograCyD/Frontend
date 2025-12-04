@@ -42,6 +42,11 @@ export const routes: Routes = [
         loadComponent: () => import('./features/movies/movie-detail/movie-detail.component').then(m => m.MovieDetailComponent)
       },
       {
+        path: 'recommendations',
+        canActivate: [authGuard],
+        loadComponent: () => import('./features/recommendations/recommendations.component').then(m => m.RecommendationsComponent)
+      },
+      {
         path: 'management',
         canActivate: [authGuard],
         loadComponent: () => import('./features/user/user-management/user-management.component').then(m => m.UserManagementComponent)

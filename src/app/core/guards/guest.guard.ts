@@ -29,7 +29,7 @@ export const guestGuard: CanActivateFn = () => {
 
   // Si ya está autenticado, redirigir a la página principal
   console.log('Usuario ya autenticado. Redirigiendo a home...');
-  router.navigate(['/']);
+  router.navigate(['/home']);
 
   return false;
 };

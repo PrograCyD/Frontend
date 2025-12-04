@@ -11,16 +11,20 @@ import { Recommendation } from '../../models';
   template: `
     <div class="admin-panel-container">
       <header class="header">
-        <div class="mock-badge">🧪 MODO MOCK - Vista de Demostración</div>
-        <h1>👑 Panel de Administración</h1>
+        <div class="mock-badge">
+          <span class="material-icons">science</span> MODO MOCK - Vista de Demostración
+        </div>
+        <h1><span class="material-icons">admin_panel_settings</span> Panel de Administración</h1>
         <p class="subtitle">Gestión de recomendaciones y mantenimiento del sistema</p>
-        <p class="warning-note">⚠️ Las funcionalidades de WebSocket y mantenimiento están deshabilitadas hasta integrar el backend</p>
+        <p class="warning-note">
+          <span class="material-icons">warning</span> Las funcionalidades de WebSocket y mantenimiento están deshabilitadas hasta integrar el backend
+        </p>
       </header>
 
       <div class="admin-sections">
         <!-- Sección: Recomendaciones de Usuario -->
         <div class="admin-card">
-          <h2>🎯 Recomendaciones de Usuario</h2>
+          <h2><span class="material-icons">recommend</span> Recomendaciones de Usuario</h2>
           <p>Genera recomendaciones para un usuario específico mediante WebSocket</p>
 
           <div class="form-group">
@@ -40,7 +44,7 @@ import { Recommendation } from '../../models';
               [disabled]="!targetUserId || wsConnected()"
               class="btn-primary"
             >
-              🔌 Conectar WebSocket
+              <span class="material-icons">power</span> Conectar WebSocket
             </button>
 
             <button
@@ -48,7 +52,7 @@ import { Recommendation } from '../../models';
               [disabled]="!wsConnected()"
               class="btn-secondary"
             >
-              🔴 Desconectar
+              <span class="material-icons">power_off</span> Desconectar
             </button>
           </div>
 

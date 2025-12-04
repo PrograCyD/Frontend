@@ -1,6 +1,9 @@
 <div class="user-management-container">
   <header class="header">
-    <h1>🛠️ Mis Gestiones</h1>
+    <h1>
+      <span class="material-icons">dashboard</span>
+      Mis Gestiones
+    </h1>
     <p class="subtitle">Administra tus solicitudes y calificaciones</p>
   </header>
 
@@ -10,13 +13,14 @@
       class="tab-button"
       [class.active]="activeTab() === 'requests'"
       (click)="setActiveTab('requests')">
-      📝 Solicitudes de Películas
+      <span class="material-icons">request_page</span>
+      Solicitudes de Películas
     </button>
     <button
       class="tab-button"
       [class.active]="activeTab() === 'ratings'"
       (click)="setActiveTab('ratings')">
-      ⭐ Mis Calificaciones
+      <span class="material-icons">star</span> Mis Calificaciones
     </button>
   </div>
 
@@ -25,8 +29,9 @@
     <div class="tab-content">
       <div class="section-header">
         <h2>Solicitudes de Películas</h2>
-        <button class="btn-primary" (click)="toggleRequestForm()">
-          {{ showRequestForm() ? '❌ Cancelar' : '➕ Nueva Solicitud' }}
+        <button class="btn-toggle-form" (click)="toggleRequestForm()">
+          <span class="material-icons">{{ showRequestForm() ? 'close' : 'add' }}</span>
+          {{ showRequestForm() ? 'Cancelar' : 'Nueva Solicitud' }}
         </button>
       </div>
 
@@ -35,142 +40,226 @@
         <div class="request-form-card">
           <h3>{{ requestForm().requestType === 'add' ? 'Agregar Nueva Película' : 'Editar Película' }}</h3>
 
-          <form (ngSubmit)="submitMovieRequest()">
-            <div class="form-row">
-              <div class="form-group">
-                <label>Tipo de Solicitud</label>
-                <select [(ngModel)]="requestForm().requestType" name="requestType" class="form-control">
-                  <option value="add">Agregar nueva película</option>
-                  <option value="edit">Editar película existente</option>
-                </select>
-              </div>
+          <!-- Form Input Mode Tabs -->
+          <div class="form-tabs">
+            <button
+              type="button"
+              class="form-tab"
+              [class.active]="formInputMode() === 'manual'"
+              (click)="formInputMode.set('manual')">
+              <span class="material-icons">edit</span>
+              Entrada Manual
+            </button>
+            <button
+              type="button"
+              class="form-tab"
+              [class.active]="formInputMode() === 'json'"
+              (click)="formInputMode.set('json')">
+              <span class="material-icons">code</span>
+              Importar JSON
+            </button>
+          </div>
 
-              @if (requestForm().requestType === 'edit') {
-                <div class="form-group">
-                  <label>ID de Película</label>
-                  <input
-                    type="number"
-                    [(ngModel)]="requestForm().movieId"
-                    name="movieId"
-                    class="form-control"
-                    placeholder="ID de la película a editar"
-                    required>
+          <form (ngSubmit)="submitMovieRequest()">
+            <div class="form-scroll">
+
+              <!-- MANUAL INPUT MODE -->
+              @if (formInputMode() === 'manual') {
+                <!-- Type Selection -->
+                <div class="form-section">
+                  <h4><span class="material-icons">settings</span> Tipo de Solicitud</h4>
+
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label>Tipo de Solicitud *</label>
+                      <select [(ngModel)]="requestForm().requestType" name="requestType" class="form-control">
+                        <option value="add">Agregar nueva película</option>
+                        <option value="edit">Editar película existente</option>
+                      </select>
+                    </div>
+
+                    @if (requestForm().requestType === 'edit') {
+                      <div class="form-group">
+                        <label>ID de Película *</label>
+                        <input
+                          type="number"
+                          [(ngModel)]="requestForm().movieId"
+                          name="movieId"
+                          class="form-control"
+                          placeholder="ID de la película a editar"
+                          required>
+                      </div>
+                    }
+                  </div>
+                </div>
+
+                <!-- Basic Information -->
+                <div class="form-section">
+                  <h4><span class="material-icons">info</span> Información Básica</h4>
+
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label>Título *</label>
+                      <input
+                        type="text"
+                        [(ngModel)]="requestForm().title"
+                        name="title"
+                        class="form-control"
+                        placeholder="Título de la película"
+                        required>
+                    </div>
+
+                    <div class="form-group">
+                      <label>Año *</label>
+                      <input
+                        type="number"
+                        [(ngModel)]="requestForm().year"
+                        name="year"
+                        class="form-control"
+                        min="1800"
+                        [max]="2100"
+                        required>
+                    </div>
+                  </div>
+
+                  <div class="form-group">
+                    <label>Géneros * (Selecciona al menos uno)</label>
+                    <div class="genre-dropdown">
+                      <button
+                        type="button"
+                        class="genre-dropdown-toggle"
+                        (click)="toggleGenreDropdown()">
+                        <span>{{ getSelectedGenresText() }}</span>
+                        <span class="material-icons">{{ genreDropdownOpen() ? 'expand_less' : 'expand_more' }}</span>
+                      </button>
+                      @if (genreDropdownOpen()) {
+                        <div class="genre-dropdown-menu">
+                          @for (genre of availableGenres; track genre) {
+                            <label class="genre-dropdown-item">
+                              <input
+                                type="checkbox"
+                                [checked]="requestForm().genres.includes(genre)"
+                                (change)="toggleGenre(genre)">
+                              <span>{{ genre }}</span>
+                            </label>
+                          }
+                        </div>
+                      }
+                    </div>
+                    @if (requestForm().genres.length > 0) {
+                      <div class="selected-genres">
+                        @for (genre of requestForm().genres; track genre) {
+                          <span class="selected-genre-badge">
+                            {{ genre }}
+                            <button
+                              type="button"
+                              class="remove-genre"
+                              (click)="toggleGenre(genre)"
+                              aria-label="Remover género">
+                              <span class="material-icons">close</span>
+                            </button>
+                          </span>
+                        }
+                      </div>
+                    }
+                  </div>
+                </div>
+
+                <!-- External Links -->
+                <div class="form-section">
+                  <h4><span class="material-icons">link</span> Enlaces Externos</h4>
+
+                  <div class="form-group">
+                    <label>MovieLens Link</label>
+                    <input
+                      type="text"
+                      [(ngModel)]="requestForm().movieLensLink"
+                      name="movieLensLink"
+                      class="form-control"
+                      placeholder="https://movielens.org/movies/...">
+                  </div>
+
+                  <div class="form-group">
+                    <label>IMDB Link</label>
+                    <input
+                      type="text"
+                      [(ngModel)]="requestForm().imdbLink"
+                      name="imdbLink"
+                      class="form-control"
+                      placeholder="https://www.imdb.com/title/tt...">
+                  </div>
+
+                  <div class="form-group">
+                    <label>TMDB Link</label>
+                    <input
+                      type="text"
+                      [(ngModel)]="requestForm().tmdbLink"
+                      name="tmdbLink"
+                      class="form-control"
+                      placeholder="https://www.themoviedb.org/movie/...">
+                  </div>
+                </div>
+
+                <!-- Tags -->
+                <div class="form-section">
+                  <h4><span class="material-icons">label</span> Tags</h4>
+
+                  <div class="form-group">
+                    <label>Genome Tags (separados por comas)</label>
+                    <input
+                      type="text"
+                      [(ngModel)]="requestForm().genomeTags"
+                      name="genomeTags"
+                      class="form-control"
+                      placeholder="action, thriller, suspense">
+                  </div>
+
+                  <div class="form-group">
+                    <label>User Tags (separados por comas)</label>
+                    <input
+                      type="text"
+                      [(ngModel)]="requestForm().userTags"
+                      name="userTags"
+                      class="form-control"
+                      placeholder="must watch, award winner">
+                  </div>
+                </div>
+
+                <!-- API Import -->
+                <div class="form-section">
+                  <h4><span class="material-icons">api</span> Importar desde API (Opcional)</h4>
+
+                  <div class="form-group">
+                    <label>API Link de TMDB</label>
+                    <input
+                      type="text"
+                      [(ngModel)]="requestForm().apiLink"
+                      name="apiLink"
+                      class="form-control"
+                      placeholder="https://api.themoviedb.org/3/movie/...">
+                    <small>Para extraer automáticamente la información de la película</small>
+                  </div>
                 </div>
               }
-            </div>
 
-            <div class="form-group">
-              <label>Título *</label>
-              <input
-                type="text"
-                [(ngModel)]="requestForm().title"
-                name="title"
-                class="form-control"
-                placeholder="Título de la película"
-                required>
-            </div>
+              <!-- JSON INPUT MODE -->
+              @if (formInputMode() === 'json') {
+                <div class="form-section">
+                  <h4><span class="material-icons">code</span> Importar JSON</h4>
 
-            <div class="form-group">
-              <label>Año *</label>
-              <input
-                type="number"
-                [(ngModel)]="requestForm().year"
-                name="year"
-                class="form-control"
-                min="1800"
-                [max]="2100"
-                required>
-            </div>
+                  <div class="form-group">
+                    <label>Datos JSON de la Película</label>
+                    <textarea
+                      [(ngModel)]="requestForm().jsonData"
+                      name="jsonData"
+                      class="form-control json-textarea"
+                      rows="20"
+                      placeholder='{"title": "Movie Name", "year": 2024, "genres": ["Action", "Drama"], ...}'></textarea>
+                    <small>Pega aquí el JSON completo con la información de la película</small>
+                  </div>
+                </div>
+              }
 
-            <div class="form-group">
-              <label>Géneros * (Selecciona al menos uno)</label>
-              <div class="genres-grid">
-                @for (genre of availableGenres; track genre) {
-                  <label class="genre-checkbox">
-                    <input
-                      type="checkbox"
-                      [checked]="requestForm().genres.includes(genre)"
-                      (change)="toggleGenre(genre)">
-                    <span>{{ genre }}</span>
-                  </label>
-                }
-              </div>
-            </div>
-
-            <div class="form-section">
-              <h4>Enlaces Externos</h4>
-              <div class="form-group">
-                <label>MovieLens Link</label>
-                <input
-                  type="text"
-                  [(ngModel)]="requestForm().movieLensLink"
-                  name="movieLensLink"
-                  class="form-control"
-                  placeholder="https://movielens.org/movies/...">
-              </div>
-              <div class="form-group">
-                <label>IMDB Link</label>
-                <input
-                  type="text"
-                  [(ngModel)]="requestForm().imdbLink"
-                  name="imdbLink"
-                  class="form-control"
-                  placeholder="https://www.imdb.com/title/tt...">
-              </div>
-              <div class="form-group">
-                <label>TMDB Link</label>
-                <input
-                  type="text"
-                  [(ngModel)]="requestForm().tmdbLink"
-                  name="tmdbLink"
-                  class="form-control"
-                  placeholder="https://www.themoviedb.org/movie/...">
-              </div>
-            </div>
-
-            <div class="form-section">
-              <h4>Tags</h4>
-              <div class="form-group">
-                <label>Genome Tags (separados por comas)</label>
-                <input
-                  type="text"
-                  [(ngModel)]="requestForm().genomeTags"
-                  name="genomeTags"
-                  class="form-control"
-                  placeholder="action, thriller, suspense">
-              </div>
-              <div class="form-group">
-                <label>User Tags (separados por comas)</label>
-                <input
-                  type="text"
-                  [(ngModel)]="requestForm().userTags"
-                  name="userTags"
-                  class="form-control"
-                  placeholder="must watch, award winner">
-              </div>
-            </div>
-
-            <div class="form-section">
-              <h4>Importar Datos (Opcional)</h4>
-              <div class="form-group">
-                <label>API Link de TMDB</label>
-                <input
-                  type="text"
-                  [(ngModel)]="requestForm().apiLink"
-                  name="apiLink"
-                  class="form-control"
-                  placeholder="https://api.themoviedb.org/3/movie/...">
-                <small>Para extraer automáticamente la información de la película</small>
-              </div>
-              <div class="form-group">
-                <label>O importar JSON directamente</label>
-                <textarea
-                  [(ngModel)]="requestForm().jsonData"
-                  name="jsonData"
-                  class="form-control"
-                  rows="6"
-                  placeholder='{"title": "Movie Name", "year": 2024, ...}'></textarea>
-              </div>
             </div>
 
             <div class="form-actions">
@@ -245,11 +334,11 @@
               (ngModelChange)="onRatingFilterChange()"
               class="form-control">
               <option [value]="0">Todos</option>
-              <option [value]="1">⭐ 1+</option>
-              <option [value]="2">⭐ 2+</option>
-              <option [value]="3">⭐ 3+</option>
-              <option [value]="4">⭐ 4+</option>
-              <option [value]="5">⭐ 5</option>
+              <option [value]="1">★ 1+</option>
+              <option [value]="2">★ 2+</option>
+              <option [value]="3">★ 3+</option>
+              <option [value]="4">★ 4+</option>
+              <option [value]="5">★ 5</option>
             </select>
           </div>
         </div>
@@ -319,12 +408,12 @@
                         <button
                           class="btn-small btn-edit"
                           (click)="startEditRating(rating.movieId, rating.rating)">
-                          ✏️
+                          <span class="material-icons">edit</span>
                         </button>
                         <button
                           class="btn-small btn-delete"
                           (click)="deleteRating(rating.movieId)">
-                          🗑️
+                          <span class="material-icons">delete</span>
                         </button>
                       }
                     </div>

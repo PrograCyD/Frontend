@@ -10,7 +10,7 @@
       class="star"
       [class.interactive]="!readonly"
       [attr.aria-label]="'Rate ' + star + ' stars'"
-      (click)="onStarClick(star)"
+      (click)="onStarClick($event, star)"
       (mouseenter)="onStarHover(star)"
       [disabled]="readonly"
     >

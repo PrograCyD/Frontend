@@ -28,6 +28,14 @@
         </a>
 
         @if (isAuthenticated()) {
+          <a routerLink="/recommendations"
+             routerLinkActive="active"
+             class="nav-link"
+             (click)="closeMobileMenu()">
+            <span class="material-icons">auto_awesome</span>
+            <span>Recomendaciones</span>
+          </a>
+
           @if (isAdmin()) {
             <a routerLink="/admin/management"
                routerLinkActive="active"

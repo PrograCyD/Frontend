@@ -94,56 +94,95 @@
         <div class="filter-columns">
           <!-- Genre Filter -->
           <div class="filter-column">
-            <h3 class="filter-title">Géneros</h3>
-            <div class="filter-options">
-              @for (genre of allGenres(); track genre) {
-                <label class="filter-option">
-                  <input
-                    type="checkbox"
-                    [checked]="selectedGenres().includes(genre)"
-                    (change)="toggleGenre(genre)"
-                    class="filter-checkbox"
-                  />
-                  <span class="filter-label">{{ genre }}</span>
-                </label>
-              }
-            </div>
+            <button class="filter-dropdown-button" (click)="toggleGenreDropdown()">
+              <span class="dropdown-label">
+                <span class="material-icons">category</span>
+                Géneros
+                @if (selectedGenres().length > 0) {
+                  <span class="filter-count">({{ selectedGenres().length }})</span>
+                }
+              </span>
+              <span class="material-icons dropdown-icon" [class.open]="showGenreDropdown()">
+                expand_more
+              </span>
+            </button>
+            @if (showGenreDropdown()) {
+              <div class="filter-options">
+                @for (genre of allGenres(); track genre) {
+                  <label class="filter-option">
+                    <input
+                      type="checkbox"
+                      [checked]="selectedGenres().includes(genre)"
+                      (change)="toggleGenre(genre)"
+                      class="filter-checkbox"
+                    />
+                    <span class="filter-label">{{ genre }}</span>
+                  </label>
+                }
+              </div>
+            }
           </div>
 
           <!-- Cast Filter -->
           <div class="filter-column">
-            <h3 class="filter-title">Reparto</h3>
-            <div class="filter-options">
-              @for (actor of allCast(); track actor) {
-                <label class="filter-option">
-                  <input
-                    type="checkbox"
-                    [checked]="selectedCast().includes(actor)"
-                    (change)="toggleCast(actor)"
-                    class="filter-checkbox"
-                  />
-                  <span class="filter-label">{{ actor }}</span>
-                </label>
-              }
-            </div>
+            <button class="filter-dropdown-button" (click)="toggleCastDropdown()">
+              <span class="dropdown-label">
+                <span class="material-icons">people</span>
+                Reparto
+                @if (selectedCast().length > 0) {
+                  <span class="filter-count">({{ selectedCast().length }})</span>
+                }
+              </span>
+              <span class="material-icons dropdown-icon" [class.open]="showCastDropdown()">
+                expand_more
+              </span>
+            </button>
+            @if (showCastDropdown()) {
+              <div class="filter-options">
+                @for (actor of allCast(); track actor) {
+                  <label class="filter-option">
+                    <input
+                      type="checkbox"
+                      [checked]="selectedCast().includes(actor)"
+                      (change)="toggleCast(actor)"
+                      class="filter-checkbox"
+                    />
+                    <span class="filter-label">{{ actor }}</span>
+                  </label>
+                }
+              </div>
+            }
           </div>
 
           <!-- Director Filter -->
           <div class="filter-column">
-            <h3 class="filter-title">Director</h3>
-            <div class="filter-options">
-              @for (director of allDirectors(); track director) {
-                <label class="filter-option">
-                  <input
-                    type="checkbox"
-                    [checked]="selectedDirectors().includes(director)"
-                    (change)="toggleDirector(director)"
-                    class="filter-checkbox"
-                  />
-                  <span class="filter-label">{{ director }}</span>
-                </label>
-              }
-            </div>
+            <button class="filter-dropdown-button" (click)="toggleDirectorDropdown()">
+              <span class="dropdown-label">
+                <span class="material-icons">movie</span>
+                Director
+                @if (selectedDirectors().length > 0) {
+                  <span class="filter-count">({{ selectedDirectors().length }})</span>
+                }
+              </span>
+              <span class="material-icons dropdown-icon" [class.open]="showDirectorDropdown()">
+                expand_more
+              </span>
+            </button>
+            @if (showDirectorDropdown()) {
+              <div class="filter-options">
+                @for (director of allDirectors(); track director) {
+                  <label class="filter-option">
+                    <input
+                      type="checkbox"
+                      [checked]="selectedDirectors().includes(director)"
+                      (change)="toggleDirector(director)"
+                      class="filter-checkbox"
+                    />
+                    <span class="filter-label">{{ director }}</span>
+                  </label>
+                }
+              </div>
+            }
           </div>
         </div>
       </div>

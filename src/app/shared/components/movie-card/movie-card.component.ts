@@ -1,8 +1,9 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Movie } from '../../../models/movie.model';
 import { StarRatingComponent } from '../star-rating/star-rating.component';
 import { ImageFallbackDirective } from '../../directives/image-fallback.directive';
+import { ConfirmationService } from '../../../services/confirmation.service';
 
 @Component({
   selector: 'app-movie-card',
@@ -18,12 +19,25 @@ export class MovieCardComponent {
   @Output() movieClick = new EventEmitter<Movie>();
   @Output() ratingChange = new EventEmitter<{movie: Movie, rating: number}>();
 
+  private confirmationService = inject(ConfirmationService);
+
   onCardClick(): void {
     this.movieClick.emit(this.movie);
   }
 
-  onRatingChange(rating: number): void {
-    this.ratingChange.emit({ movie: this.movie, rating });
+  async onRatingChange(rating: number): Promise<void> {
+    const confirmed = await this.confirmationService.confirm({
+      title: 'Confirmar calificación',
+      message: `¿Deseas calificar "${this.movie.title}" con ${rating} estrella${rating !== 1 ? 's' : ''}?`,
+      confirmText: 'Calificar',
+      cancelText: 'Cancelar',
+      type: 'info',
+      icon: 'star'
+    });
+
+    if (confirmed) {
+      this.ratingChange.emit({ movie: this.movie, rating });
+    }
   }
 
   getYear(): string {

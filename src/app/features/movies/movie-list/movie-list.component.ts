@@ -12,7 +12,7 @@ import { Movie } from '../../../models';
   template: `
     <div class="movie-list-container">
       <header class="header">
-        <h1>🎬 Catálogo de Películas</h1>
+        <h1><span class="material-icons">movie</span> Catálogo de Películas</h1>
 
         <div class="search-bar">
           <input
@@ -22,7 +22,9 @@ import { Movie } from '../../../models';
             placeholder="Buscar películas..."
             class="search-input"
           />
-          <button (click)="onSearch()" class="search-btn">🔍 Buscar</button>
+          <button (click)="onSearch()" class="search-btn">
+            <span class="material-icons">search</span> Buscar
+          </button>
         </div>
 
         <div class="filters">
@@ -36,7 +38,7 @@ import { Movie } from '../../../models';
             [class.active]="viewMode() === 'top'"
             (click)="setViewMode('top')"
           >
-            ⭐ Top Rated
+            <span class="material-icons">star</span> Top Rated
           </button>
         </div>
       </header>
@@ -67,7 +69,9 @@ import { Movie } from '../../../models';
               @if (movie.posterPath || movie.posterUrl) {
                 <img [src]="movie.posterPath || movie.posterUrl" [alt]="movie.title" />
               } @else {
-                <div class="no-poster">🎬</div>
+                <div class="no-poster">
+                  <span class="material-icons">movie</span>
+                </div>
               }
             </div>
             <div class="movie-info">
@@ -75,7 +79,9 @@ import { Movie } from '../../../models';
               <div class="movie-meta">
                 <span class="year">{{ extractYear(movie.releaseDate) }}</span>
                 @if (movie.averageRating) {
-                  <span class="rating">⭐ {{ movie.averageRating.toFixed(1) }}</span>
+                  <span class="rating">
+                    <span class="material-icons">star</span> {{ movie.averageRating.toFixed(1) }}
+                  </span>
                 }
               </div>
               @if (movie.genres && movie.genres.length > 0) {

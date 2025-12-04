@@ -26,11 +26,11 @@ import {
   imports: [CommonModule],
   template: `
     <div style="padding: 20px; font-family: system-ui;">
-      <h1>🧪 Service Tester (Mock Mode)</h1>
+      <h1><span class="material-icons">science</span> Service Tester (Mock Mode)</h1>
       <p>Abre la consola del navegador (F12) para ver los resultados</p>
 
       <div style="margin-top: 20px;">
-        <h2>🔐 AuthService</h2>
+        <h2><span class="material-icons">lock</span> AuthService</h2>
         <p>User autenticado: {{ currentUser() ? currentUser()!.email : 'Ninguno' }}</p>
         <p>Es Admin: {{ isAdmin() ? 'Sí' : 'No' }}</p>
 
@@ -41,27 +41,27 @@ import {
       </div>
 
       <div style="margin-top: 20px;">
-        <h2>🎬 MovieService</h2>
+        <h2><span class="material-icons">movie</span> MovieService</h2>
         <button (click)="testGetMovie()">Obtener Película #1</button>
         <button (click)="testSearchMovies()">Buscar "The"</button>
         <button (click)="testTopMovies()">Top 10 Películas</button>
       </div>
 
       <div style="margin-top: 20px;">
-        <h2>⭐ RatingService</h2>
+        <h2><span class="material-icons">star</span> RatingService</h2>
         <button (click)="testCreateRating()">Calificar Película #1 (4.5★)</button>
         <button (click)="testGetMyRatings()">Ver Mis Ratings</button>
       </div>
 
       <div style="margin-top: 20px;">
-        <h2>🎯 RecommendationService</h2>
+        <h2><span class="material-icons">recommend</span> RecommendationService</h2>
         <button (click)="testGetRecommendations()">Obtener Recomendaciones</button>
         <button (click)="testGetRecommendationsRefresh()">Recomendaciones (Refresh)</button>
         <button (click)="testWebSocket()">Test WebSocket (Admin)</button>
       </div>
 
       <div style="margin-top: 20px; padding: 10px; background: #f0f0f0;">
-        <h3>📊 Resultados</h3>
+        <h3><span class="material-icons">bar_chart</span> Resultados</h3>
         <pre style="max-height: 400px; overflow-y: auto;">{{ results() }}</pre>
       </div>
     </div>
