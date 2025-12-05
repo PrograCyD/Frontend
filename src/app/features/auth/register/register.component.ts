@@ -12,7 +12,6 @@ import { AuthService } from '../../../services/auth.service';
   styleUrl: './register.component.css'
 })
 export class RegisterComponent {
-  // ✅ Inyección de dependencias correcta
   private authService = inject(AuthService);
   private router = inject(Router);
   private fb = inject(FormBuilder);
@@ -25,12 +24,15 @@ export class RegisterComponent {
   showConfirmPassword = signal(false);
 
   constructor() {
-    this.registerForm = this.fb.group({
-      username: ['', [Validators.required, Validators.minLength(3)]],
-      email: ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required, Validators.minLength(6)]],
-      confirmPassword: ['', [Validators.required]]
-    }, { validators: this.passwordMatchValidator });
+    this.registerForm = this.fb.group(
+      {
+        username: ['', [Validators.required, Validators.minLength(3)]],
+        email: ['', [Validators.required, Validators.email]],
+        password: ['', [Validators.required, Validators.minLength(6)]],
+        confirmPassword: ['', [Validators.required]]
+      },
+      { validators: this.passwordMatchValidator }
+    );
   }
 
   togglePasswordVisibility(): void {
@@ -41,7 +43,7 @@ export class RegisterComponent {
     this.showConfirmPassword.update(value => !value);
   }
 
-  passwordMatchValidator(form: FormGroup) {
+  private passwordMatchValidator(form: FormGroup) {
     const password = form.get('password');
     const confirmPassword = form.get('confirmPassword');
 
@@ -52,19 +54,30 @@ export class RegisterComponent {
   }
 
   onSubmit(): void {
-    if (this.registerForm.invalid) return;
+    if (this.registerForm.invalid) {
+      this.registerForm.markAllAsTouched();
+      return;
+    }
 
     this.isLoading.set(true);
     this.errorMessage.set('');
     this.successMessage.set('');
 
-    const { email, password } = this.registerForm.value;
+    const { username, email, password } = this.registerForm.value;
 
-    // ✅ MODO MOCK: Registro con datos de prueba
-    this.authService.register({ email, password }).subscribe({
-      next: (response) => {
-        console.log('✅ Registro exitoso:', response);
-        this.successMessage.set('¡Registro exitoso! Redirigiendo...');
+    // Armamos el payload para POST /auth/register
+    const payload = {
+      email,
+      password,
+      username,
+      role: 'user' as const,      // por defecto todos los que se registran son user
+      // about, firstName, lastName, preferredGenres se pueden añadir luego si los pides en el form
+    };
+
+    this.authService.register(payload).subscribe({
+      next: (user) => {
+        console.log('✅ Registro exitoso:', user);
+        this.successMessage.set('¡Registro exitoso! Redirigiendo al inicio de sesión...');
         this.isLoading.set(false);
 
         setTimeout(() => {
@@ -73,7 +86,13 @@ export class RegisterComponent {
       },
       error: (error) => {
         console.error('❌ Error en registro:', error);
-        this.errorMessage.set(error.error || 'Error al registrarse. El email puede estar en uso.');
+
+        const backendMsg =
+          (typeof error?.error === 'string' && error.error) ||
+          error?.error?.message ||
+          'Error al registrarse. Es posible que el email ya esté en uso.';
+
+        this.errorMessage.set(backendMsg);
         this.isLoading.set(false);
       }
     });

@@ -1,10 +1,12 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { User } from '../../../models/user.model';
 import { MovieExtended } from '../../../models/movie.model';
 import { mockMovies } from '../../../data/mock-movies';
+import { AuthService } from '../../../services/auth.service';
+import { UpdateUserRequest } from '../../../models/user.model';
 
 interface UserRating {
   movieId: number;
@@ -21,6 +23,9 @@ interface UserRating {
   styleUrl: './profile.component.css'
 })
 export class ProfileComponent implements OnInit {
+  private router = inject(Router);
+  private authService = inject(AuthService);
+
   user = signal<User | null>(null);
   userRatings = signal<UserRating[]>([]);
   isLoading = signal(false);
@@ -34,43 +39,34 @@ export class ProfileComponent implements OnInit {
     lastName: '',
     username: '',
     email: '',
-    bio: '',
-    favoriteGenres: [] as string[]
+    about: '',
+    preferredGenres: [] as string[]
   });
 
   // Géneros disponibles
-  availableGenres = ['Acción', 'Aventura', 'Comedia', 'Drama', 'Terror', 'Ciencia Ficción',
-                     'Romance', 'Thriller', 'Fantasía', 'Misterio', 'Histórico', 'Independiente'];
-
-  constructor(private router: Router) {}
+  availableGenres = [
+    'Acción', 'Aventura', 'Comedia', 'Drama', 'Terror', 'Ciencia Ficción',
+    'Romance', 'Thriller', 'Fantasía', 'Misterio', 'Histórico', 'Independiente'
+  ];
 
   ngOnInit(): void {
     this.loadUserProfile();
-    this.loadUserRatings();
+    this.loadUserRatings(); // sigue siendo mock por ahora
   }
 
-  loadUserProfile(): void {
-    // Mock user data
-    const mockUser: User = {
-      userId: 1,
-      email: 'user@cinematch.com',
-      username: 'cinefilo2024',
-      firstName: 'Juan',
-      lastName: 'Pérez',
-      bio: 'Amante del cine clásico y las películas independientes. Siempre buscando nuevas historias que contar.',
-      favoriteGenres: ['Acción', 'Ciencia Ficción', 'Drama'],
-      role: 'user',
-      createdAt: new Date('2024-01-15')
-    };
-
-    this.user.set(mockUser);
+  private loadUserProfile(): void {
+    const current = this.authService.currentUser();
+    if (!current) {
+      this.router.navigate(['/login']);
+      return;
+    }
+    this.user.set(current);
     this.syncEditForm();
   }
 
-  loadUserRatings(): void {
+  private loadUserRatings(): void {
     this.isLoading.set(true);
 
-    // Simulate API call with mock data
     setTimeout(() => {
       const mockRatings: UserRating[] = [
         { movieId: 1, rating: 5, timestamp: Date.now() - 86400000 },
@@ -83,7 +79,6 @@ export class ProfileComponent implements OnInit {
         { movieId: 8, rating: 5, timestamp: Date.now() - 691200000 }
       ];
 
-      // Attach movie data
       const ratingsWithMovies = mockRatings.map(rating => ({
         ...rating,
         movie: mockMovies.find(m => m.movieId === rating.movieId)
@@ -94,7 +89,7 @@ export class ProfileComponent implements OnInit {
     }, 500);
   }
 
-  syncEditForm(): void {
+  private syncEditForm(): void {
     const currentUser = this.user();
     if (currentUser) {
       this.editForm.set({
@@ -102,11 +97,13 @@ export class ProfileComponent implements OnInit {
         lastName: currentUser.lastName || '',
         username: currentUser.username || '',
         email: currentUser.email || '',
-        bio: currentUser.bio || '',
-        favoriteGenres: [...(currentUser.favoriteGenres || [])]
+        about: currentUser.about || '',
+        preferredGenres: [...(currentUser.preferredGenres || [])]
       });
     }
   }
+
+  // ------------ Perfil básico (nombre, email, username) ------------
 
   startEditingProfile(): void {
     this.syncEditForm();
@@ -120,19 +117,39 @@ export class ProfileComponent implements OnInit {
 
   saveProfile(): void {
     const currentUser = this.user();
-    if (currentUser) {
-      const form = this.editForm();
-      this.user.set({
-        ...currentUser,
-        firstName: form.firstName,
-        lastName: form.lastName,
-        username: form.username,
-        email: form.email
-      });
-      this.isEditingProfile.set(false);
-      console.log('Perfil guardado:', this.user());
-    }
+    if (!currentUser) return;
+
+    const form = this.editForm();
+    const payload: UpdateUserRequest = {
+      firstName: form.firstName,
+      lastName: form.lastName,
+      username: form.username,
+      email: form.email
+    };
+
+    this.isLoading.set(true);
+
+    this.authService.updateUser(currentUser.userId, payload).subscribe({
+      next: (res) => {
+        if (res.updated) {
+          const updatedUser: User = {
+            ...currentUser,
+            ...payload
+          };
+          this.user.set(updatedUser);
+          this.authService.currentUser.set(updatedUser);
+        }
+        this.isEditingProfile.set(false);
+        this.isLoading.set(false);
+      },
+      error: (err) => {
+        console.error('Error actualizando perfil:', err);
+        this.isLoading.set(false);
+      }
+    });
   }
+
+  // ------------ Biografía ------------
 
   startEditingBio(): void {
     this.syncEditForm();
@@ -146,15 +163,35 @@ export class ProfileComponent implements OnInit {
 
   saveBio(): void {
     const currentUser = this.user();
-    if (currentUser) {
-      this.user.set({
-        ...currentUser,
-        bio: this.editForm().bio
-      });
-      this.isEditingBio.set(false);
-      console.log('Biografía guardada');
-    }
+    if (!currentUser) return;
+
+    const payload: UpdateUserRequest = {
+      about: this.editForm().about
+    };
+
+    this.isLoading.set(true);
+
+    this.authService.updateUser(currentUser.userId, payload).subscribe({
+      next: (res) => {
+        if (res.updated) {
+          const updatedUser: User = {
+            ...currentUser,
+            about: payload.about
+          };
+          this.user.set(updatedUser);
+          this.authService.currentUser.set(updatedUser);
+        }
+        this.isEditingBio.set(false);
+        this.isLoading.set(false);
+      },
+      error: (err) => {
+        console.error('Error actualizando biografía:', err);
+        this.isLoading.set(false);
+      }
+    });
   }
+
+  // ------------ Géneros favoritos ------------
 
   startEditingGenres(): void {
     this.syncEditForm();
@@ -168,19 +205,37 @@ export class ProfileComponent implements OnInit {
 
   saveGenres(): void {
     const currentUser = this.user();
-    if (currentUser) {
-      this.user.set({
-        ...currentUser,
-        favoriteGenres: [...this.editForm().favoriteGenres]
-      });
-      this.isEditingGenres.set(false);
-      console.log('Géneros favoritos guardados');
-    }
+    if (!currentUser) return;
+
+    const payload: UpdateUserRequest = {
+      preferredGenres: [...this.editForm().preferredGenres]
+    };
+
+    this.isLoading.set(true);
+
+    this.authService.updateUser(currentUser.userId, payload).subscribe({
+      next: (res) => {
+        if (res.updated) {
+          const updatedUser: User = {
+            ...currentUser,
+            preferredGenres: payload.preferredGenres
+          };
+          this.user.set(updatedUser);
+          this.authService.currentUser.set(updatedUser);
+        }
+        this.isEditingGenres.set(false);
+        this.isLoading.set(false);
+      },
+      error: (err) => {
+        console.error('Error actualizando géneros:', err);
+        this.isLoading.set(false);
+      }
+    });
   }
 
   toggleGenre(genre: string): void {
     const form = this.editForm();
-    const genres = form.favoriteGenres;
+    const genres = [...form.preferredGenres];
     const index = genres.indexOf(genre);
 
     if (index > -1) {
@@ -189,12 +244,14 @@ export class ProfileComponent implements OnInit {
       genres.push(genre);
     }
 
-    this.editForm.set({ ...form, favoriteGenres: [...genres] });
+    this.editForm.set({ ...form, preferredGenres: genres });
   }
 
   isGenreSelected(genre: string): boolean {
-    return this.editForm().favoriteGenres.includes(genre);
+    return this.editForm().preferredGenres.includes(genre);
   }
+
+  // ------------ Navegación ------------
 
   goToAdmin(): void {
     this.router.navigate(['/admin']);

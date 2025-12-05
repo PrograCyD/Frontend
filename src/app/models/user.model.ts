@@ -5,15 +5,16 @@
 
 export interface User {
   userId: number;
+  uIdx?: number;
   email: string;
   username?: string;
   firstName?: string;
   lastName?: string;
-  bio?: string;
-  favoriteGenres?: string[];
+  about?: string;
+  preferredGenres?: string[];
   role: 'admin' | 'user';
-  createdAt?: Date;
-  updatedAt?: Date;
+  createdAt?: string | Date;
+  updatedAt?: string | Date;
 }
 
 export interface LoginRequest {
@@ -23,13 +24,17 @@ export interface LoginRequest {
 
 export interface LoginResponse {
   token: string;
-  userId: number;
-  role: 'admin' | 'user';
+  user: User;
 }
 
 export interface RegisterRequest {
   email: string;
   password: string;
+  username?: string;
+  firstName?: string;
+  lastName?: string;
+  about?: string;
+  preferredGenres?: string[];
   role?: 'admin' | 'user';
 }
 
@@ -37,4 +42,13 @@ export interface UpdateUserRequest {
   email?: string;
   password?: string;
   role?: 'admin' | 'user';
+  username?: string;
+  firstName?: string;
+  lastName?: string;
+  about?: string;
+  preferredGenres?: string[];
+}
+
+export interface UpdateUserResponse {
+  updated: boolean;
 }

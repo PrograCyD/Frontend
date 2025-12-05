@@ -2,25 +2,23 @@
  * AuthService - Servicio de Autenticación
  *
  * Endpoints del backend:
- * - POST /auth/register - Registro de usuarios
- * - POST /auth/login - Login y generación de JWT
- * - PUT /users/{id}/update - Actualización de usuario (solo admin)
- *
- * MOCK MODE: Actualmente usa datos simulados.
- * Para activar API real: environment.mockData = false
+ * - POST /auth/login      - Login y generación de JWT
+ * - POST /auth/register   - Registro de usuarios
+ * - PUT  /users/{id}/update - Actualización de usuario (solo admin)
  */
 
 import { Injectable, signal, computed } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, of, delay, throwError } from 'rxjs';
-import { tap, map, catchError } from 'rxjs/operators';
+import { Observable, throwError } from 'rxjs';
+import { tap, catchError } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import {
   User,
   LoginRequest,
   LoginResponse,
   RegisterRequest,
-  UpdateUserRequest
+  UpdateUserRequest,
+  UpdateUserResponse
 } from '../models';
 
 @Injectable({
@@ -29,46 +27,10 @@ import {
 export class AuthService {
   private readonly API_URL = environment.apiUrl;
 
-  // Signals para estado reactivo (Angular 20)
+  // Signals para estado reactivo
   currentUser = signal<User | null>(null);
   isAuthenticated = computed(() => this.currentUser() !== null);
   isAdmin = computed(() => this.currentUser()?.role === 'admin');
-
-  // Mock database - USUARIOS DE PRUEBA
-  // ⭐ Para Login: usa email + password de abajo
-  private mockUsers: User[] = [
-    {
-      userId: 1,
-      email: 'admin@movies.com',
-      role: 'admin',
-      createdAt: new Date('2024-01-01')
-    },
-    {
-      userId: 2,
-      email: 'user@movies.com',
-      role: 'user',
-      createdAt: new Date('2024-01-15')
-    },
-    {
-      userId: 3,
-      email: 'john.doe@movies.com',
-      role: 'user',
-      createdAt: new Date('2024-02-10')
-    },
-    {
-      userId: 4,
-      email: 'jane.smith@movies.com',
-      role: 'user',
-      createdAt: new Date('2024-03-05')
-    }
-  ];
-
-  private mockPasswords = new Map([
-    ['admin@movies.com', 'admin123'],      // 🔑 ADMIN
-    ['user@movies.com', 'user123'],        // 🔑 USER regular
-    ['john.doe@movies.com', 'password123'],// 🔑 USER John
-    ['jane.smith@movies.com', 'password123'] // 🔑 USER Jane
-  ]);
 
   constructor(private http: HttpClient) {
     this.loadUserFromStorage();
@@ -79,14 +41,10 @@ export class AuthService {
    * Backend: POST /auth/login
    */
   login(credentials: LoginRequest): Observable<LoginResponse> {
-    if (environment.mockData) {
-      return this.mockLogin(credentials);
-    }
-
-    // REAL API (activar cuando backend esté disponible)
-    return this.http.post<LoginResponse>(`${this.API_URL}/auth/login`, credentials)
+    return this.http
+      .post<LoginResponse>(`${this.API_URL}/auth/login`, credentials)
       .pipe(
-        tap(response => this.saveToken(response)),
+        tap(res => this.saveSession(res)),
         catchError(this.handleError)
       );
   }
@@ -94,16 +52,13 @@ export class AuthService {
   /**
    * Register - Registro de nuevo usuario
    * Backend: POST /auth/register
+   * El backend devuelve el User creado (sin token).
    */
-  register(data: RegisterRequest): Observable<LoginResponse> {
-    if (environment.mockData) {
-      return this.mockRegister(data);
-    }
-
-    // REAL API
-    return this.http.post<LoginResponse>(`${this.API_URL}/auth/register`, data)
+  register(data: RegisterRequest): Observable<User> {
+    return this.http
+      .post<User>(`${this.API_URL}/auth/register`, data)
       .pipe(
-        tap(response => this.saveToken(response)),
+        // aquí NO se guarda sesión porque el backend no devuelve token
         catchError(this.handleError)
       );
   }
@@ -112,13 +67,9 @@ export class AuthService {
    * Update User - Actualizar datos de usuario (solo admin)
    * Backend: PUT /users/{id}/update
    */
-  updateUser(userId: number, data: UpdateUserRequest): Observable<User> {
-    if (environment.mockData) {
-      return this.mockUpdateUser(userId, data);
-    }
-
-    // REAL API
-    return this.http.put<User>(`${this.API_URL}/users/${userId}/update`, data)
+  updateUser(userId: number, data: UpdateUserRequest): Observable<UpdateUserResponse> {
+    return this.http
+      .put<UpdateUserResponse>(`${this.API_URL}/users/${userId}/update`, data)
       .pipe(catchError(this.handleError));
   }
 
@@ -127,25 +78,17 @@ export class AuthService {
    */
   logout(): void {
     localStorage.removeItem('token');
-    localStorage.removeItem('userId');
-    localStorage.removeItem('userEmail');
-    localStorage.removeItem('userRole');
+    localStorage.removeItem('user');
     this.currentUser.set(null);
   }
 
   /**
    * Guardar token y datos de usuario en localStorage
    */
-  saveToken(response: LoginResponse): void {
+  private saveSession(response: LoginResponse): void {
     localStorage.setItem('token', response.token);
-    localStorage.setItem('userId', response.userId.toString());
-    localStorage.setItem('userRole', response.role);
-
-    this.currentUser.set({
-      userId: response.userId,
-      email: '', // Se obtiene del token en producción
-      role: response.role
-    });
+    localStorage.setItem('user', JSON.stringify(response.user));
+    this.currentUser.set(response.user);
   }
 
   /**
@@ -174,125 +117,19 @@ export class AuthService {
    */
   private loadUserFromStorage(): void {
     const token = localStorage.getItem('token');
-    const userId = localStorage.getItem('userId');
-    const userRole = localStorage.getItem('userRole');
-    const userEmail = localStorage.getItem('userEmail');
+    const userStr = localStorage.getItem('user');
 
-    if (token && userId && userRole) {
-      this.currentUser.set({
-        userId: parseInt(userId),
-        email: userEmail || '',
-        role: userRole as 'admin' | 'user'
-      });
+    if (token && userStr) {
+      try {
+        const user: User = JSON.parse(userStr);
+        this.currentUser.set(user);
+      } catch {
+        this.logout();
+      }
     }
   }
 
-  // ============================================
-  // MOCK METHODS (Simular backend)
-  // ============================================
-
-  private mockLogin(credentials: LoginRequest): Observable<LoginResponse> {
-    return of(null).pipe(
-      delay(500), // Simular latencia de red
-      map(() => {
-        const user = this.mockUsers.find(u => u.email === credentials.email);
-        const password = this.mockPasswords.get(credentials.email);
-
-        if (!user || password !== credentials.password) {
-          throw { error: 'Invalid credentials', status: 401 };
-        }
-
-        const response: LoginResponse = {
-          token: this.generateMockJWT(user),
-          userId: user.userId,
-          role: user.role
-        };
-
-        localStorage.setItem('userEmail', user.email);
-        this.saveToken(response);
-
-        return response;
-      }),
-      catchError(err => throwError(() => err))
-    );
-  }
-
-  private mockRegister(data: RegisterRequest): Observable<LoginResponse> {
-    return of(null).pipe(
-      delay(500),
-      map(() => {
-        // Verificar si el email ya existe
-        if (this.mockUsers.find(u => u.email === data.email)) {
-          throw { error: 'Email already exists', status: 400 };
-        }
-
-        const newUser: User = {
-          userId: this.mockUsers.length + 1,
-          email: data.email,
-          role: data.role || 'user',
-          createdAt: new Date()
-        };
-
-        this.mockUsers.push(newUser);
-        this.mockPasswords.set(data.email, data.password);
-
-        const response: LoginResponse = {
-          token: this.generateMockJWT(newUser),
-          userId: newUser.userId,
-          role: newUser.role
-        };
-
-        localStorage.setItem('userEmail', newUser.email);
-        this.saveToken(response);
-
-        return response;
-      }),
-      catchError(err => throwError(() => err))
-    );
-  }
-
-  private mockUpdateUser(userId: number, data: UpdateUserRequest): Observable<User> {
-    return of(null).pipe(
-      delay(300),
-      map(() => {
-        const userIndex = this.mockUsers.findIndex(u => u.userId === userId);
-
-        if (userIndex === -1) {
-          throw { error: 'User not found', status: 404 };
-        }
-
-        const user = this.mockUsers[userIndex];
-        const oldEmail = user.email;
-
-        if (data.email) user.email = data.email;
-        if (data.role) user.role = data.role;
-        if (data.password && data.email) {
-          this.mockPasswords.delete(oldEmail);
-          this.mockPasswords.set(data.email, data.password);
-        }
-
-        user.updatedAt = new Date();
-
-        return user;
-      }),
-      catchError(err => throwError(() => err))
-    );
-  }
-
-  private generateMockJWT(user: User): string {
-    const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
-    const payload = btoa(JSON.stringify({
-      sub: user.userId,
-      email: user.email,
-      role: user.role,
-      exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60) // 24 horas
-    }));
-    const signature = btoa(`mock-signature-${user.userId}-${Date.now()}`);
-
-    return `${header}.${payload}.${signature}`;
-  }
-
-  private handleError(error: any): Observable<never> {
+  private handleError(error: any) {
     console.error('AuthService Error:', error);
     return throwError(() => error);
   }

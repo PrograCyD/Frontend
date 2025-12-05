@@ -810,8 +810,9 @@ export class AdminManagementComponent implements OnInit {
   loadRequests(): void {
     this.movieRequestService.getAllMovieRequests().subscribe({
       next: (response) => {
+        // response = { requests: MovieRequest[] }
         this.movieRequests.set(response.requests);
-        this.requestsTotal.set(response.total);
+        this.requestsTotal.set(response.requests.length); // ← aquí el cambio
       },
       error: (err) => {
         console.error('Error loading requests:', err);

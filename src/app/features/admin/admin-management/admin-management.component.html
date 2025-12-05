@@ -1095,28 +1095,29 @@
           }
 
           <!-- External Links -->
-          @if (selectedRequest()!.movieData.links.tmdb || selectedRequest()!.movieData.links.imdb || selectedRequest()!.movieData.links.movieLens) {
-            <div class="links-section">
+          @if (selectedRequest()!.movieData.links?.tmdb
+              || selectedRequest()!.movieData.links?.imdb
+              || selectedRequest()!.movieData.links?.movielens) {
               <strong>Enlaces Externos:</strong>
               <div class="links-grid">
-                @if (selectedRequest()!.movieData.links.movieLens) {
-                  <a [href]="selectedRequest()!.movieData.links.movieLens"
+                @if (selectedRequest()!.movieData.links?.movielens) {
+                  <a [href]="selectedRequest()!.movieData.links?.movielens"
                      target="_blank"
                      class="external-link">
                     <span class="material-icons">link</span>
                     MovieLens
                   </a>
                 }
-                @if (selectedRequest()!.movieData.links.imdb) {
-                  <a [href]="selectedRequest()!.movieData.links.imdb"
+                @if (selectedRequest()!.movieData.links?.imdb) {
+                  <a [href]="selectedRequest()!.movieData.links?.imdb"
                      target="_blank"
                      class="external-link">
                     <span class="material-icons">link</span>
                     IMDB
                   </a>
                 }
-                @if (selectedRequest()!.movieData.links.tmdb) {
-                  <a [href]="selectedRequest()!.movieData.links.tmdb"
+                @if (selectedRequest()!.movieData.links?.tmdb) {
+                  <a [href]="selectedRequest()!.movieData.links?.tmdb"
                      target="_blank"
                      class="external-link">
                     <span class="material-icons">link</span>
@@ -1124,7 +1125,6 @@
                   </a>
                 }
               </div>
-            </div>
           }
 
           <!-- Tags -->

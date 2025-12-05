@@ -189,8 +189,10 @@
                 Genome Tags
               </h3>
               <div class="tags-container genome-tags">
-                @for (tag of movie.genomeTags; track tag) {
-                  <span class="tag-chip genome-tag">{{ tag }}</span>
+                @for (genomeTag of movie.genomeTags; track genomeTag.tag) {
+                  <span class="tag-chip genome-tag">
+                    {{ genomeTag.tag }}
+                  </span>
                 }
               </div>
             </div>

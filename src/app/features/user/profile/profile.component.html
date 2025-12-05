@@ -141,14 +141,14 @@
 
       @if (isEditingBio()) {
         <div class="edit-form">
-          <textarea [(ngModel)]="editForm().bio" class="bio-textarea" rows="4" placeholder="Cuéntanos sobre ti..."></textarea>
+          <textarea [(ngModel)]="editForm().about" class="bio-textarea" rows="4" placeholder="Cuéntanos sobre ti..."></textarea>
           <div class="form-actions">
             <button class="btn-save" (click)="saveBio()">Guardar</button>
             <button class="btn-cancel" (click)="cancelEditBio()">Cancelar</button>
           </div>
         </div>
       } @else {
-        <p class="bio-text">{{ user.bio || 'No has agregado una biografía aún.' }}</p>
+        <p class="bio-text">{{ user.about || 'No has agregado una biografía aún.' }}</p>
       }
     </div>
 
@@ -185,9 +185,9 @@
           </div>
         </div>
       } @else {
-        @if (user.favoriteGenres && user.favoriteGenres.length > 0) {
+        @if (user.preferredGenres && user.preferredGenres.length > 0) {
           <div class="genres-display">
-            @for (genre of user.favoriteGenres; track genre) {
+            @for (genre of user.preferredGenres; track genre) {
               <span class="genre-tag">{{ genre }}</span>
             }
           </div>

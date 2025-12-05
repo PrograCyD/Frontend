@@ -550,29 +550,39 @@
                   {{ getStatusText(request.status) }}
                 </span>
               </div>
+
               <div class="request-details">
-                <p><strong>Tipo:</strong> {{ request.requestType === 'add' ? 'Agregar' : 'Editar' }}</p>
+                <p>
+                  <strong>Tipo:</strong>
+                  {{ request.requestType === 'add' ? 'Agregar película' : 'Editar película' }}
+                </p>
+
                 <p><strong>Año:</strong> {{ request.movieData.year }}</p>
                 <p><strong>Géneros:</strong> {{ request.movieData.genres.join(', ') }}</p>
-                <p><strong>Fecha:</strong> {{ request.createdAt }}</p>
+                <p><strong>Fecha:</strong> {{ request.createdAt | date:'short' }}</p>
+
                 @if (request.reviewNote) {
-                  <p class="review-note"><strong>Nota del revisor:</strong> {{ request.reviewNote }}</p>
+                  <p class="review-note">
+                    <strong>Motivo / Nota:</strong> {{ request.reviewNote }}
+                  </p>
                 }
               </div>
             </div>
           }
         }
       </div>
+
+
     </div>
   }
 
   <!-- RATINGS TAB -->
   @if (activeTab() === 'ratings') {
-    <div class="tab-content">
-      <div class="section-header">
-        <h2>Mis Calificaciones</h2>
-        <p class="rating-count">Total: {{ ratingsTotal() }}</p>
-      </div>
+          <div class="tab-content">
+            <div class="section-header">
+              <h2>Mis Calificaciones</h2>
+              <p class="rating-count">Total: {{ ratingsTotal() }}</p>
+            </div>
 
       <!-- Filters -->
       <div class="filters-card">
@@ -604,35 +614,35 @@
       </div>
 
       <!-- Ratings Table -->
-      @if (isLoadingRatings()) {
-        <div class="loading">Cargando calificaciones...</div>
-      } @else if (myRatings().length === 0) {
-        <div class="empty-state">
-          <p>No tienes calificaciones aún</p>
-        </div>
-      } @else {
-        <div class="table-responsive">
-          <table class="ratings-table">
-            <thead>
-              <tr>
-                <th>Película</th>
-                <th>Géneros</th>
-                <th>Mi Calificación</th>
-                <th>Fecha</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (rating of paginatedRatings(); track rating.movieId) {
-                <tr>
-                  <td>
-                    <div class="movie-cell">
-                      @if (rating.movie?.posterPath) {
-                        <img [src]="rating.movie?.posterPath" [alt]="rating.movie?.title" class="mini-poster">
-                      }
-                      <span>{{ rating.movie?.title || 'Película ' + rating.movieId }}</span>
-                    </div>
-                  </td>
+               @if (isLoadingRatings()) {
+            <div class="loading">Cargando calificaciones...</div>
+          } @else if (myRatings().length === 0) {
+            <div class="empty-state">
+              <p>No tienes calificaciones aún</p>
+            </div>
+          } @else {
+            <div class="table-responsive">
+              <table class="ratings-table">
+                <thead>
+                  <tr>
+                    <th>Película</th>
+                    <th>Géneros</th>
+                    <th>Mi Calificación</th>
+                    <th>Fecha</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (rating of paginatedRatings(); track rating.movieId + '-' + rating.timestamp) {
+                    <tr>
+                      <td>
+                        <div class="movie-cell">
+                          @if (rating.movie?.posterPath) {
+                            <img [src]="rating.movie?.posterPath" [alt]="rating.movie?.title" class="mini-poster">
+                          }
+                          <span>{{ rating.movie?.title || ('Película ' + rating.movieId) }}</span>
+                        </div>
+                      </td>
                   <td>
                     <div class="genres-cell">
                       @for (genre of (rating.movie?.genres || []).slice(0, 2); track genre) {

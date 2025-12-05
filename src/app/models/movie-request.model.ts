@@ -1,50 +1,83 @@
+import type { Movie } from './movie.model';
+
+export type MovieRequestStatus = 'pending' | 'approved' | 'rejected';
+export type MovieRequestType = 'add' | 'edit';
+
 /**
- * Movie Request Models
- * Para solicitudes de agregar/editar películas
+ * Estructura de los datos de película que viajan dentro de la solicitud.
+ * Debe alinear con lo que armas en submitMovieRequest().
  */
-
-export interface MovieRequest {
-  requestId?: number;
-  userId: number;
-  requestType: 'add' | 'edit';
-  status: 'pending' | 'approved' | 'rejected';
-  movieId?: number; // Solo para editar
-  movieData: MovieRequestData;
-  createdAt?: string;
-  updatedAt?: string;
-  reviewedBy?: number;
-  reviewNote?: string;
-}
-
-export interface MovieRequestData {
+export interface MovieRequestMovieData {
   title: string;
   year: number;
   genres: string[];
-  links: {
-    movieLens?: string;
+
+  // enlaces externos
+  links?: {
+    movielens?: string;
     imdb?: string;
     tmdb?: string;
   };
-  genomeTags?: string[];
-  userTags?: string[];
-  posterUrl?: string;
+
+  // info descriptiva
   overview?: string;
-  cast?: string; // Comma-separated actor names
-  castDetails?: Array<{ name: string; imageUrl?: string }>; // Cast with images
+  posterUrl?: string;
   director?: string;
-  runtime?: number; // Duration in minutes
+
+  // números opcionales
+  runtime?: number;
   budget?: number;
   revenue?: number;
-  jsonData?: string; // JSON completo de la película
+
+  // texto libre que escribes en el form
+  cast?: string;
+
+  // lo que generas con form.cast.split(',') en el componente
+  castDetails?: {
+    name: string;
+    imageUrl?: string;
+  }[];
+
+  // desde el formulario: form.genomeTags.split(',')
+  genomeTags?: string[];
+
+  // desde el formulario: form.userTags.split(',')
+  userTags?: string[];
+
+  // por si quieres enviar el JSON crudo
+  jsonData?: string;
 }
 
+/**
+ * Objeto que devuelve el backend para cada solicitud
+ * (GET /me/movie-requests, GET /admin/movie-requests, etc.)
+ */
+export interface MovieRequest {
+  requestId: string;           // id de la solicitud
+  userId: number;
+  requestType: MovieRequestType;
+  status: MovieRequestStatus;
+  movieData: MovieRequestMovieData;
+  reviewNote?: string;         // nota del revisor (cuando aplica)
+  reviewedBy?: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * Body que envías al backend para crear/editar una solicitud
+ * Lo usas en UserManagementComponent.submitMovieRequest()
+ */
 export interface CreateMovieRequestParams {
-  requestType: 'add' | 'edit';
-  movieId?: number;
-  movieData: MovieRequestData;
+  requestType: MovieRequestType;
+  movieId?: number;                // solo cuando es 'edit'
+  movieData: MovieRequestMovieData;
 }
 
-export interface MovieRequestsResponse {
-  requests: MovieRequest[];
-  total: number;
+/**
+ * Respuesta de aprobar una solicitud (si la usas en el admin)
+ */
+export interface ApproveMovieRequestResponse {
+  movie: Movie;        // película ya creada/actualizada en la colección principal
+  request: MovieRequest;
 }

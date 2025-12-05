@@ -1,6 +1,6 @@
 export const environment = {
   production: true,
-  apiUrl: 'https://api-produccion.com', // Actualizar con URL real
+  apiUrl: 'https://api-produccion.com',
   wsUrl: 'wss://api-produccion.com',
   mockData: false,
   jwtSecret: 'supersecret_jwt_para_pc4',

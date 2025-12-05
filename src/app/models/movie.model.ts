@@ -50,18 +50,13 @@ export interface Movie {
   createdAt: string;
   updatedAt: string;
 
-  // @deprecated - Use externalData.posterUrl instead
+  // ---- Props viejas/alias solo para UI (opcionales) ----
   posterPath?: string;
-  // @deprecated - Use externalData.posterUrl instead
   posterUrl?: string;
-  // @deprecated - Use year instead
   releaseDate?: string;
-  // @deprecated - Use ratingStats.average instead
   voteAverage?: number;
   averageRating?: number;
-  // @deprecated - Use ratingStats.count instead
   voteCount?: number;
-  // @deprecated - Use externalData properties
   overview?: string;
   runtime?: number;
   budget?: number;
@@ -71,7 +66,6 @@ export interface Movie {
   tagline?: string;
   backdropPath?: string;
   tags?: string[];
-  // @deprecated - Use links properties
   tmdbId?: number;
   imdbId?: string;
   movieLensId?: number;
@@ -82,40 +76,42 @@ export interface Movie {
  * Used for enhanced display and computed values
  */
 export interface MovieExtended extends Movie {
-  // Computed/derived properties for UI
-  userRating?: number; // Current user's rating
+  // estado de usuario
+  userRating?: number;
   watchlistStatus?: boolean;
   favoriteStatus?: boolean;
 
-  // Helpers for easier access (aliasing nested properties)
-  posterPath?: string;
-  backdropPath?: string;
-  overview?: string;
-  cast?: string[]; // Simplified cast for quick display
+  // propiedades “aplanadas” para la UI
+  cast?: string[];        // nombres de actores
   director?: string;
   runtime?: number;
   budget?: number;
   revenue?: number;
   averageRating?: number;
-  voteAverage?: number; // Alias for averageRating
+  voteAverage?: number;
   voteCount?: number;
   popularity?: number;
-  releaseDate?: string; // Formatted date string
-  tmdbId?: number;
-  imdbId?: string;
-  movieLensId?: number;
+  releaseDate?: string;
 }
 
+
+/**
+ * Parámetros de búsqueda /movies/search
+ * Backend: q, genre, year_from, year_to, limit, offset
+ */
 export interface MovieSearchParams {
-  query?: string;
-  genres?: string[];
-  minRating?: number;
-  yearFrom?: number;
-  yearTo?: number;
+  q?: string;
+  genre?: string;  // si quieres varios, envías "Action,Comedy" y el backend los separa
+  year_from?: number;
+  year_to?: number;
   limit?: number;
   offset?: number;
 }
 
+/**
+ * Respuesta paginada de /movies/search
+ * Esperado: objeto con total + límite + offset + lista
+ */
 export interface MovieSearchResponse {
   movies: Movie[];
   total: number;
@@ -123,10 +119,56 @@ export interface MovieSearchResponse {
   offset: number;
 }
 
+/**
+ * Parámetros para /movies/top
+ * Backend: metric=popular|rating, limit
+ */
+export type MovieTopMetric = 'popular' | 'rating';
+
 export interface TopMoviesParams {
+  metric?: MovieTopMetric;
   limit?: number;
-  offset?: number;
-  genre?: string;
+}
+
+/**
+ * Respuesta de /movies/tmdb-prefill
+ * (perfil completo para prellenar formulario)
+ */
+export interface MovieTmdbPrefill {
+  title: string;
+  year: number;
+  genres: string[];
+  overview: string;
+  runtime: number;
+  director: string;
+  cast: CastMember[];
+  posterUrl: string;
+  links: {
+    imdb?: string;
+    tmdb?: string;
+  };
+  userTags: string[];
+  genomeTags: GenomeTag[];
+}
+
+/**
+ * Cuerpo para crear/actualizar película (POST/PUT /admin/movies)
+ */
+export interface MovieCreateUpdateRequest {
+  title: string;
+  year: number;
+  genres: string[];
+  overview: string;
+  runtime: number;
+  director: string;
+  cast: CastMember[];
+  posterUrl: string;
+  links: {
+    imdb?: string;
+    tmdb?: string;
+  };
+  userTags: string[];
+  genomeTags: GenomeTag[];
 }
 
 /**
@@ -134,11 +176,11 @@ export interface TopMoviesParams {
  */
 export class MovieHelpers {
   static getPosterUrl(movie: Movie): string | undefined {
-    return movie.externalData?.posterUrl;
+    return movie.externalData?.posterUrl ?? movie.posterUrl ?? movie.posterPath;
   }
 
   static getOverview(movie: Movie): string | undefined {
-    return movie.externalData?.overview;
+    return movie.externalData?.overview ?? movie.overview;
   }
 
   static getDirector(movie: Movie): string | undefined {
@@ -146,15 +188,15 @@ export class MovieHelpers {
   }
 
   static getRuntime(movie: Movie): number | undefined {
-    return movie.externalData?.runtime;
+    return movie.externalData?.runtime ?? movie.runtime;
   }
 
   static getBudget(movie: Movie): number | undefined {
-    return movie.externalData?.budget;
+    return movie.externalData?.budget ?? movie.budget;
   }
 
   static getRevenue(movie: Movie): number | undefined {
-    return movie.externalData?.revenue;
+    return movie.externalData?.revenue ?? movie.revenue;
   }
 
   static getCast(movie: Movie): CastMember[] | undefined {
@@ -162,22 +204,22 @@ export class MovieHelpers {
   }
 
   static getAverageRating(movie: Movie): number | undefined {
-    return movie.ratingStats?.average;
+    return movie.ratingStats?.average ?? movie.averageRating ?? movie.voteAverage;
   }
 
   static getRatingCount(movie: Movie): number | undefined {
-    return movie.ratingStats?.count;
+    return movie.ratingStats?.count ?? movie.voteCount;
   }
 
-  static getTmdbId(movie: Movie): string | undefined {
+  static getTmdbUrl(movie: Movie): string | undefined {
     return movie.links?.tmdb;
   }
 
-  static getImdbId(movie: Movie): string | undefined {
+  static getImdbUrl(movie: Movie): string | undefined {
     return movie.links?.imdb;
   }
 
-  static getMovieLensId(movie: Movie): string | undefined {
+  static getMovieLensUrl(movie: Movie): string | undefined {
     return movie.links?.movielens;
   }
 
@@ -185,25 +227,21 @@ export class MovieHelpers {
    * Converts a Movie to MovieExtended with flattened properties for easier access
    */
   static toExtended(movie: Movie): MovieExtended {
+    const releaseDate = movie.year ? `${movie.year}-01-01` : undefined;
+
     return {
       ...movie,
-      posterPath: movie.externalData?.posterUrl,
-      backdropPath: undefined,
-      overview: movie.externalData?.overview,
+      posterPath: this.getPosterUrl(movie),
+      overview: this.getOverview(movie),
       cast: movie.externalData?.cast?.map(c => c.name),
       director: movie.externalData?.director,
-      runtime: movie.externalData?.runtime,
-      budget: movie.externalData?.budget,
-      revenue: movie.externalData?.revenue,
-      averageRating: movie.ratingStats?.average,
-      voteCount: movie.ratingStats?.count,
-      voteAverage: movie.ratingStats?.average,
-      popularity: undefined,
-      releaseDate: movie.year ? `${movie.year}-01-01` : undefined,
-      tmdbId: movie.links?.tmdb ? parseInt(movie.links.tmdb) : undefined,
-      imdbId: movie.links?.imdb,
-      movieLensId: movie.links?.movielens ? parseInt(movie.links.movielens) : undefined
+      runtime: this.getRuntime(movie),
+      budget: this.getBudget(movie),
+      revenue: this.getRevenue(movie),
+      averageRating: this.getAverageRating(movie),
+      voteAverage: this.getAverageRating(movie),
+      voteCount: this.getRatingCount(movie),
+      releaseDate
     };
   }
 }
-

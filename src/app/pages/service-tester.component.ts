@@ -181,7 +181,7 @@ export class ServiceTesterComponent {
   testSearchMovies() {
     console.log('🔍 Testing searchMovies...');
     this.movieService.searchMovies({
-      query: 'The',
+      q: 'zootopia',    // o 'The'
       limit: 10
     }).subscribe({
       next: (response) => {
@@ -195,6 +195,7 @@ export class ServiceTesterComponent {
       }
     });
   }
+
 
   testTopMovies() {
     console.log('🏆 Testing getTopMovies...');
@@ -247,10 +248,10 @@ export class ServiceTesterComponent {
     }
 
     this.ratingService.getMyRatings().subscribe({
-      next: (response) => {
-        console.log('✅ Mis ratings obtenidos:', response);
-        console.log(`Total: ${response.total} ratings`);
-        this.results.set(JSON.stringify(response, null, 2));
+      next: (ratings) => {
+        console.log('✅ Mis ratings obtenidos:', ratings);
+        console.log(`Total: ${ratings.length} ratings`);
+        this.results.set(JSON.stringify(ratings, null, 2));
       },
       error: (err) => {
         console.error('❌ Error al obtener ratings:', err);
@@ -258,6 +259,7 @@ export class ServiceTesterComponent {
       }
     });
   }
+
 
   // ========================================
   // RECOMMENDATION TESTS

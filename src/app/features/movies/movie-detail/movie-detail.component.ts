@@ -1,4 +1,13 @@
-import { Component, OnInit, signal, computed, ViewChild, ElementRef, AfterViewInit, inject } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  signal,
+  computed,
+  ViewChild,
+  ElementRef,
+  AfterViewInit,
+  inject
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MovieExtended } from '../../../models/movie.model';
@@ -23,23 +32,43 @@ export class MovieDetailComponent implements OnInit, AfterViewInit {
   userRating = signal(0);
   isLoading = signal(false);
 
-  // Compute similar movies based on shared genres and tags
+  // Películas similares usando géneros + genomeTags + userTags
   similarMovies = computed(() => {
     const currentMovie = this.movie();
     if (!currentMovie) return [];
+
+    const currentGenomeTags =
+      (currentMovie.genomeTags || []).map(t =>
+        typeof t === 'string' ? t : t.tag
+      );
+    const currentUserTags = currentMovie.userTags || [];
 
     return mockMovies
       .filter(m => m.movieId !== currentMovie.movieId)
       .map(m => {
         let score = 0;
 
-        // Score based on shared genres
-        const sharedGenres = m.genres.filter((g: string) => currentMovie.genres.includes(g));
+        // Géneros compartidos (más peso)
+        const sharedGenres = m.genres.filter(g =>
+          currentMovie.genres.includes(g)
+        );
         score += sharedGenres.length * 3;
 
-        // Score based on shared tags
-        const sharedTags = (m.tags || []).filter((t: string) => (currentMovie.tags || []).includes(t));
-        score += sharedTags.length;
+        // Genome tags compartidos
+        const mGenomeTags = (m.genomeTags || []).map(t =>
+          typeof t === 'string' ? t : t.tag
+        );
+        const sharedGenomeTags = mGenomeTags.filter(tag =>
+          currentGenomeTags.includes(tag)
+        );
+        score += sharedGenomeTags.length * 2;
+
+        // User tags compartidos
+        const mUserTags = m.userTags || [];
+        const sharedUserTags = mUserTags.filter(tag =>
+          currentUserTags.includes(tag)
+        );
+        score += sharedUserTags.length;
 
         return { movie: m, score };
       })
@@ -63,7 +92,7 @@ export class MovieDetailComponent implements OnInit, AfterViewInit {
       return;
     }
 
-    this.loadMovie(parseInt(movieId));
+    this.loadMovie(parseInt(movieId, 10));
   }
 
   ngAfterViewInit(): void {
@@ -82,7 +111,7 @@ export class MovieDetailComponent implements OnInit, AfterViewInit {
   loadMovie(id: number): void {
     this.isLoading.set(true);
 
-    // Simulate API call with mock data
+    // TODO: reemplazar mockMovies por llamada al backend /movies/{id}
     setTimeout(() => {
       const movie = mockMovies.find(m => m.movieId === id);
       if (movie) {
@@ -113,7 +142,7 @@ export class MovieDetailComponent implements OnInit, AfterViewInit {
 
     if (confirmed) {
       this.userRating.set(rating);
-      // TODO: Save rating to backend
+      // TODO: guardar rating en backend
       console.log('Rating changed:', rating);
     }
   }
@@ -123,9 +152,11 @@ export class MovieDetailComponent implements OnInit, AfterViewInit {
     this.router.navigate(['/movies', movie.movieId]);
   }
 
+  // Ahora, como el endpoint de búsqueda no tiene filtro por actor,
+  // solo enviamos el nombre del actor en q (búsqueda de texto libre).
   onActorClick(actor: string): void {
     this.router.navigate(['/movies'], {
-      queryParams: { actor: actor }
+      queryParams: { q: actor }
     });
   }
 
@@ -135,7 +166,7 @@ export class MovieDetailComponent implements OnInit, AfterViewInit {
       style: 'currency',
       currency: 'USD',
       minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
+      maximumFractionDigits: 0
     }).format(amount);
   }
 
@@ -144,29 +175,15 @@ export class MovieDetailComponent implements OnInit, AfterViewInit {
     return new Date(dateString).getFullYear().toString();
   }
 
-  getMovieLensUrl(movieLensId: number | undefined): string {
-    if (!movieLensId) return '#';
-    return `https://movielens.org/movies/${movieLensId}`;
-  }
-
-  getImdbUrl(imdbId: string | undefined): string {
-    if (!imdbId) return '#';
-    return `https://www.imdb.com/title/${imdbId}`;
-  }
-
-  getTmdbUrl(tmdbId: number | undefined): string {
-    if (!tmdbId) return '#';
-    return `https://www.themoviedb.org/movie/${tmdbId}`;
-  }
-
   scrollSimilarMovies(direction: 'left' | 'right'): void {
     const carouselElement = this.similarCarousel?.nativeElement;
     if (!carouselElement) return;
 
     const scrollAmount = carouselElement.clientWidth * 0.8;
-    const targetScroll = direction === 'left'
-      ? carouselElement.scrollLeft - scrollAmount
-      : carouselElement.scrollLeft + scrollAmount;
+    const targetScroll =
+      direction === 'left'
+        ? carouselElement.scrollLeft - scrollAmount
+        : carouselElement.scrollLeft + scrollAmount;
 
     carouselElement.scrollTo({
       left: targetScroll,
@@ -186,7 +203,6 @@ export class MovieDetailComponent implements OnInit, AfterViewInit {
     const clientWidth = carouselElement.clientWidth;
     const maxScroll = scrollWidth - clientWidth;
 
-    // Ocultar/mostrar botones basado en posición y si hay contenido suficiente
     const hasOverflow = scrollWidth > clientWidth;
 
     if (!hasOverflow) {

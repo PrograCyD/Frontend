@@ -1,11 +1,19 @@
 import { Component, OnInit, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+
 import { MovieRequestService } from '../../../services/movie-request.service';
 import { RatingService } from '../../../services/rating.service';
 import { MovieService } from '../../../services/movie.service';
 import { ConfirmationService } from '../../../services/confirmation.service';
-import { MovieRequest, CreateMovieRequestParams, Movie, Rating } from '../../../models';
+
+import {
+  MovieRequest,
+  Movie,
+  Rating,
+  CreateMovieRequestParams
+} from '../../../models';
+
 import { StarRatingComponent } from '../../../shared/components/star-rating/star-rating.component';
 
 interface UserRatingExtended extends Rating {
@@ -31,33 +39,43 @@ export class UserManagementComponent implements OnInit {
   isLoadingFromUrl = signal(false);
   urlImportError = signal<string | null>(null);
   urlImportSuccess = signal(false);
+
+  // requestType/movieId: solo UI por ahora (el backend solo agrega películas)
   requestForm = signal({
     requestType: 'add' as 'add' | 'edit',
     movieId: undefined as number | undefined,
+
     title: '',
     year: new Date().getFullYear(),
     genres: [] as string[],
+
     movieLensLink: '',
     imdbLink: '',
     tmdbLink: '',
-    genomeTags: '',
-    userTags: '',
+
+    genomeTags: '',  // CSV -> [{tag, relevance:1}]
+    userTags: '',    // CSV -> string[]
+
     overview: '',
     posterUrl: '',
     director: '',
+    runtime: undefined as number | undefined,
+
+    // extras solo UI
     budget: undefined as number | undefined,
     revenue: undefined as number | undefined,
-    cast: '',
+    cast: '',        // "Actor 1, Actor 2" -> CastMember[]
     castUrl: '',
     importUrl: '',
     jsonData: ''
   });
 
+  // ==========================
   // Ratings tab
+  // ==========================
   myRatings = signal<UserRatingExtended[]>([]);
   ratingsPage = signal(0);
   ratingsPageSize = signal(10);
-  ratingsTotal = signal(0);
   ratingsFilter = signal({
     search: '',
     minRating: 0,
@@ -79,30 +97,40 @@ export class UserManagementComponent implements OnInit {
     'Mystery', 'Romance', 'Science Fiction', 'Thriller', 'War'
   ];
 
-  // Computed
-  paginatedRatings = computed(() => {
+  // ==========================
+  // Helpers para ratings
+  // ==========================
+  /** Devuelve la lista de ratings ya filtrada (por búsqueda y rango de estrellas) */
+  private getFilteredRatings(): UserRatingExtended[] {
     const ratings = this.myRatings();
     const filter = this.ratingsFilter();
 
-    // Apply filters
-    let filtered = ratings.filter(r => {
-      const matchesSearch = !filter.search ||
-        r.movie?.title.toLowerCase().includes(filter.search.toLowerCase());
+    return ratings.filter(r => {
+      const title = r.movie?.title?.toLowerCase() || '';
+      const search = filter.search.toLowerCase();
+
+      const matchesSearch = !search || title.includes(search);
       const matchesMinRating = r.rating >= filter.minRating;
       const matchesMaxRating = r.rating <= filter.maxRating;
+
       return matchesSearch && matchesMinRating && matchesMaxRating;
     });
+  }
 
-    this.ratingsTotal.set(filtered.length);
-
-    // Paginate
+  // Computed
+  paginatedRatings = computed(() => {
+    const filtered = this.getFilteredRatings();
     const page = this.ratingsPage();
     const pageSize = this.ratingsPageSize();
+
     return filtered.slice(page * pageSize, (page + 1) * pageSize);
   });
 
+  // 👇 total ahora es derivado, sin escribir dentro del computed
+  ratingsTotal = computed(() => this.getFilteredRatings().length);
+
   totalPages = computed(() =>
-    Math.ceil(this.ratingsTotal() / this.ratingsPageSize())
+    Math.max(1, Math.ceil(this.ratingsTotal() / this.ratingsPageSize()))
   );
 
   // Services
@@ -114,6 +142,27 @@ export class UserManagementComponent implements OnInit {
   ngOnInit(): void {
     this.loadMyRequests();
     this.loadMyRatings();
+  }
+
+  // ============================================
+  // Helpers privados
+  // ============================================
+
+  private extractTmdbId(input: string): string | null {
+    const trimmed = input.trim();
+
+    // Solo número
+    if (/^\d+$/.test(trimmed)) return trimmed;
+
+    // ?tmdbId=603
+    const queryMatch = trimmed.match(/tmdbId=(\d+)/);
+    if (queryMatch) return queryMatch[1];
+
+    // https://www.themoviedb.org/movie/603-...
+    const urlMatch = trimmed.match(/themoviedb\.org\/movie\/(\d+)/);
+    if (urlMatch) return urlMatch[1];
+
+    return null;
   }
 
   // ============================================
@@ -130,16 +179,23 @@ export class UserManagementComponent implements OnInit {
 
   loadMyRequests(): void {
     this.isLoadingRequests.set(true);
-    this.movieRequestService.getMyMovieRequests().subscribe({
-      next: (response: any) => {
-        this.myRequests.set(response.requests);
-        this.isLoadingRequests.set(false);
-      },
-      error: (err: any) => {
-        console.error('Error loading requests:', err);
-        this.isLoadingRequests.set(false);
-      }
-    });
+
+    this.movieRequestService
+      .getMyMovieRequests({ status: 'all', limit: 50 })
+      .subscribe({
+        next: (response) => {
+          const requests = Array.isArray(response)
+            ? response
+            : response.requests;
+
+          this.myRequests.set(requests);
+          this.isLoadingRequests.set(false);
+        },
+        error: (err) => {
+          console.error('Error loading requests:', err);
+          this.isLoadingRequests.set(false);
+        }
+      });
   }
 
   toggleRequestForm(): void {
@@ -164,6 +220,7 @@ export class UserManagementComponent implements OnInit {
       overview: '',
       posterUrl: '',
       director: '',
+      runtime: undefined,
       budget: undefined,
       revenue: undefined,
       cast: '',
@@ -171,44 +228,55 @@ export class UserManagementComponent implements OnInit {
       importUrl: '',
       jsonData: ''
     });
+
     this.urlImportError.set(null);
     this.urlImportSuccess.set(false);
   }
 
   importFromUrl(): void {
-    const url = this.requestForm().importUrl?.trim();
-    if (!url) return;
+    const raw = this.requestForm().importUrl?.trim();
+    if (!raw) return;
 
     this.isLoadingFromUrl.set(true);
     this.urlImportError.set(null);
     this.urlImportSuccess.set(false);
 
-    // Llamar al servicio para obtener los datos desde la URL
-    this.movieService.fetchMovieFromUrl(url).subscribe({
+    const tmdbId = this.extractTmdbId(raw);
+
+    if (!tmdbId) {
+      this.isLoadingFromUrl.set(false);
+      this.urlImportError.set(
+        'Por ahora solo se soportan URLs o IDs de TMDb. Ej: https://www.themoviedb.org/movie/603 o solo "603".'
+      );
+      return;
+    }
+
+    this.movieService.getMovieTmdbPrefill(tmdbId).subscribe({
       next: (movieData) => {
-        // Rellenar el formulario con los datos obtenidos
         this.requestForm.update(form => ({
           ...form,
           title: movieData.title || '',
           year: movieData.year || new Date().getFullYear(),
           genres: movieData.genres || [],
-          overview: movieData.externalData?.overview || '',
-          posterUrl: movieData.externalData?.posterUrl || '',
-          director: movieData.externalData?.director || '',
+          overview: movieData.overview || '',
+          runtime: movieData.runtime || undefined,
+          director: movieData.director || '',
+          posterUrl: movieData.posterUrl || '',
           imdbLink: movieData.links?.imdb || '',
           tmdbLink: movieData.links?.tmdb || '',
-          movieLensLink: movieData.links?.movielens || ''
+          userTags: movieData.userTags?.join(', ') || '',
+          genomeTags: movieData.genomeTags?.map(gt => gt.tag).join(', ') || ''
         }));
 
         this.isLoadingFromUrl.set(false);
         this.urlImportSuccess.set(true);
       },
       error: (err) => {
-        console.error('Error importing from URL:', err);
+        console.error('Error importing from TMDb prefill:', err);
         this.isLoadingFromUrl.set(false);
         this.urlImportError.set(
           err.error?.message ||
-          'No se pudieron obtener los datos de la URL. Verifica que sea una URL válida de TMDb, IMDb o MovieLens.'
+          'No se pudieron obtener los datos desde TMDb. Verifica el ID/URL.'
         );
       }
     });
@@ -217,26 +285,24 @@ export class UserManagementComponent implements OnInit {
   toggleGenre(genre: string): void {
     const form = this.requestForm();
     const index = form.genres.indexOf(genre);
+
     if (index >= 0) {
       form.genres.splice(index, 1);
     } else {
       form.genres.push(genre);
     }
+
     this.requestForm.set({ ...form });
   }
 
   toggleGenreDropdown(): void {
-    this.genreDropdownOpen.update(value => !value);
+    this.genreDropdownOpen.update(v => !v);
   }
 
   getSelectedGenresText(): string {
     const genres = this.requestForm().genres;
-    if (genres.length === 0) {
-      return 'Selecciona géneros...';
-    }
-    if (genres.length === 1) {
-      return genres[0];
-    }
+    if (genres.length === 0) return 'Selecciona géneros...';
+    if (genres.length === 1) return genres[0];
     return `${genres.length} géneros seleccionados`;
   }
 
@@ -250,36 +316,46 @@ export class UserManagementComponent implements OnInit {
 
     this.isSubmitting.set(true);
 
-    const params: CreateMovieRequestParams = {
+    const userTags = form.userTags
+      ? form.userTags.split(',').map(t => t.trim()).filter(Boolean)
+      : undefined;
+
+    const genomeTags = form.genomeTags
+      ? form.genomeTags.split(',').map(t => t.trim()).filter(Boolean)
+      : undefined;
+
+    const castDetails = form.cast
+      ? form.cast.split(',').map(name => ({ name: name.trim() }))
+      : undefined;
+
+    const body: CreateMovieRequestParams = {
       requestType: form.requestType,
-      movieId: form.movieId,
+      movieId: form.requestType === 'edit'
+        ? form.movieId
+        : undefined,
       movieData: {
         title: form.title,
         year: form.year,
         genres: form.genres,
         links: {
-          movieLens: form.movieLensLink || undefined,
+          movielens: form.movieLensLink || undefined,
           imdb: form.imdbLink || undefined,
           tmdb: form.tmdbLink || undefined
         },
-        genomeTags: form.genomeTags ? form.genomeTags.split(',').map(t => t.trim()) : undefined,
-        userTags: form.userTags ? form.userTags.split(',').map(t => t.trim()) : undefined,
         overview: form.overview || undefined,
         posterUrl: form.posterUrl || undefined,
         director: form.director || undefined,
-        budget: form.budget || undefined,
-        revenue: form.revenue || undefined,
+        budget: form.budget,
+        revenue: form.revenue,
         cast: form.cast || undefined,
-        castDetails: form.cast ? form.cast.split(',').map(name => ({
-          name: name.trim(),
-          imageUrl: undefined
-        })) : undefined,
-        runtime: undefined, // This would need to be added to the form if needed
+        castDetails,
+        genomeTags,
+        userTags,
         jsonData: form.jsonData || undefined
       }
     };
 
-    this.movieRequestService.createMovieRequest(params).subscribe({
+    this.movieRequestService.createMovieRequest(body).subscribe({
       next: () => {
         alert('Solicitud enviada exitosamente');
         this.showRequestForm.set(false);
@@ -318,32 +394,34 @@ export class UserManagementComponent implements OnInit {
 
   loadMyRatings(): void {
     this.isLoadingRatings.set(true);
-    this.ratingService.getMyRatings().subscribe({
-      next: (response: any) => {
-        // Load movie details for each rating
-        const ratingsWithMovies: UserRatingExtended[] = [];
-        let loaded = 0;
 
-        if (response.ratings.length === 0) {
+    this.ratingService.getMyRatings().subscribe({
+      next: (ratings: Rating[]) => {
+        if (!ratings || ratings.length === 0) {
           this.myRatings.set([]);
           this.isLoadingRatings.set(false);
           return;
         }
 
-        response.ratings.forEach((rating: any) => {
+        const ratingsWithMovies: UserRatingExtended[] = [];
+        let loaded = 0;
+
+        ratings.forEach((rating) => {
           this.movieService.getMovie(rating.movieId).subscribe({
-            next: (movie: Movie) => {
+            next: (movie) => {
               ratingsWithMovies.push({ ...rating, movie });
               loaded++;
-              if (loaded === response.ratings.length) {
+
+              if (loaded === ratings.length) {
                 this.myRatings.set(ratingsWithMovies);
                 this.isLoadingRatings.set(false);
               }
             },
             error: () => {
-              ratingsWithMovies.push(rating);
+              ratingsWithMovies.push({ ...rating });
               loaded++;
-              if (loaded === response.ratings.length) {
+
+              if (loaded === ratings.length) {
                 this.myRatings.set(ratingsWithMovies);
                 this.isLoadingRatings.set(false);
               }
@@ -351,7 +429,7 @@ export class UserManagementComponent implements OnInit {
           });
         });
       },
-      error: (err: any) => {
+      error: (err) => {
         console.error('Error loading ratings:', err);
         this.isLoadingRatings.set(false);
       }
@@ -369,20 +447,21 @@ export class UserManagementComponent implements OnInit {
 
   saveRating(movieId: number): void {
     const newRating = this.editRatingValue();
+
     this.ratingService.createMyRating({ movieId, rating: newRating }).subscribe({
-      next: () => {
-        // Update local state
+      next: (updated) => {
         const ratings = this.myRatings();
         const index = ratings.findIndex(r => r.movieId === movieId);
+
         if (index >= 0) {
-          ratings[index].rating = newRating;
-          ratings[index].timestamp = Math.floor(Date.now() / 1000);
-          this.myRatings.set([...ratings]);
+          ratings[index].rating = updated.rating;
+          ratings[index].timestamp = updated.timestamp;
         }
+
+        this.myRatings.set([...ratings]);
         this.editingRating.set(null);
       },
-      error: (err: any) => {
-        console.error('Error updating rating:', err);
+      error: () => {
         alert('Error al actualizar la calificación');
       }
     });

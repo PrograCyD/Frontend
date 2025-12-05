@@ -1,25 +1,14 @@
-/**
- * MovieRequestService - Servicio de Solicitudes de Películas
- *
- * Endpoints del backend:
- * - POST /me/movie-requests - Crear solicitud de película (usuario)
- * - GET /me/movie-requests - Obtener mis solicitudes (usuario)
- * - GET /admin/movie-requests - Obtener todas las solicitudes (admin)
- * - PUT /admin/movie-requests/{id}/approve - Aprobar solicitud (admin)
- * - PUT /admin/movie-requests/{id}/reject - Rechazar solicitud (admin)
- *
- * MOCK MODE: Actualmente usa datos simulados.
- */
-
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, of, delay } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
+
 import {
   MovieRequest,
-  MovieRequestsResponse,
-  CreateMovieRequestParams
+  MovieRequestStatus,
+  CreateMovieRequestParams,
+  MovieRequestMovieData,
+  ApproveMovieRequestResponse
 } from '../models';
 
 @Injectable({
@@ -27,194 +16,123 @@ import {
 })
 export class MovieRequestService {
   private readonly API_URL = environment.apiUrl;
-  private mockRequests: MovieRequest[] = [];
-  private nextRequestId = 1;
 
-  constructor(private http: HttpClient) {
-    if (environment.mockData) {
-      this.initializeMockData();
-    }
-  }
+  constructor(private http: HttpClient) {}
 
   /**
    * Crear solicitud de película (usuario)
+   * POST /me/movie-requests
+   * Body: CreateMovieRequestParams
+   * Response: MovieRequest
    */
-  createMovieRequest(params: CreateMovieRequestParams): Observable<MovieRequest> {
-    if (environment.mockData) {
-      return this.mockCreateRequest(params);
-    }
-
-    return this.http.post<MovieRequest>(`${this.API_URL}/me/movie-requests`, params);
+  createMovieRequest(body: CreateMovieRequestParams): Observable<MovieRequest> {
+    return this.http.post<MovieRequest>(
+      `${this.API_URL}/me/movie-requests`,
+      body
+    );
   }
 
   /**
-   * Obtener mis solicitudes (usuario)
+   * Obtener mis solicitudes de película (usuario)
+   * GET /me/movie-requests?status=...&limit=...&offset=...
+   * Response (según tu componente): { requests: MovieRequest[] }
+   *
+   * status: pending | approved | rejected | all   (por defecto: pending)
    */
-  getMyMovieRequests(): Observable<MovieRequestsResponse> {
-    if (environment.mockData) {
-      return this.mockGetMyRequests();
-    }
-
-    return this.http.get<MovieRequestsResponse>(`${this.API_URL}/me/movie-requests`);
-  }
-
-  /**
-   * Obtener todas las solicitudes (admin)
-   */
-  getAllMovieRequests(status?: 'pending' | 'approved' | 'rejected'): Observable<MovieRequestsResponse> {
-    if (environment.mockData) {
-      return this.mockGetAllRequests(status);
-    }
-
+  getMyMovieRequests(options?: {
+    status?: MovieRequestStatus | 'all';
+    limit?: number;
+    offset?: number;
+  }): Observable<{ requests: MovieRequest[] }> {
     let params = new HttpParams();
-    if (status) {
-      params = params.set('status', status);
+
+    if (options?.status) {
+      params = params.set('status', options.status);
+    }
+    if (options?.limit != null) {
+      params = params.set('limit', options.limit.toString());
+    }
+    if (options?.offset != null) {
+      params = params.set('offset', options.offset.toString());
     }
 
-    return this.http.get<MovieRequestsResponse>(`${this.API_URL}/admin/movie-requests`, { params });
+    return this.http.get<{ requests: MovieRequest[] }>(
+      `${this.API_URL}/me/movie-requests`,
+      { params }
+    );
+  }
+
+  /**
+   * Obtener solicitudes como admin
+   * GET /admin/movie-requests?status=...&limit=...&offset=...
+   * Response: { requests: MovieRequest[] }
+   */
+  getAllMovieRequests(options?: {
+    status?: MovieRequestStatus | 'all';
+    limit?: number;
+    offset?: number;
+  }): Observable<{ requests: MovieRequest[] }> {
+    let params = new HttpParams();
+
+    if (options?.status) {
+      params = params.set('status', options.status);
+    }
+    if (options?.limit != null) {
+      params = params.set('limit', options.limit.toString());
+    }
+    if (options?.offset != null) {
+      params = params.set('offset', options.offset.toString());
+    }
+
+    return this.http.get<{ requests: MovieRequest[] }>(
+      `${this.API_URL}/admin/movie-requests`,
+      { params }
+    );
   }
 
   /**
    * Aprobar solicitud (admin)
+   * POST /admin/movie-requests/{id}/approve
+   *
+   * Body: override opcional solo con campos de MovieRequestMovieData
+   * Response: { movie, request }
    */
-  approveMovieRequest(requestId: number, note?: string): Observable<MovieRequest> {
-    if (environment.mockData) {
-      return this.mockApproveRequest(requestId, note);
+// movie-request.service.ts
+
+  approveMovieRequest(
+    requestId: string,
+    reviewNote?: string,
+    override?: Partial<MovieRequestMovieData>
+  ): Observable<ApproveMovieRequestResponse> {
+    const body: any = {};
+
+    if (reviewNote) {
+      body.reviewNote = reviewNote;   // nota opcional
+    }
+    if (override) {
+      body.override = override;       // si algún día quieres sobreescribir campos
     }
 
-    return this.http.put<MovieRequest>(
+    return this.http.post<ApproveMovieRequestResponse>(
       `${this.API_URL}/admin/movie-requests/${requestId}/approve`,
-      { note }
+      body
     );
   }
 
   /**
    * Rechazar solicitud (admin)
+   * POST /admin/movie-requests/{id}/reject
+   *
+   * Body: { reason }
+   * Response: MovieRequest (ya con status "rejected")
    */
-  rejectMovieRequest(requestId: number, note?: string): Observable<MovieRequest> {
-    if (environment.mockData) {
-      return this.mockRejectRequest(requestId, note);
-    }
-
-    return this.http.put<MovieRequest>(
+  rejectMovieRequest(
+    requestId: string,
+    reason: string
+  ): Observable<MovieRequest> {
+    return this.http.post<MovieRequest>(
       `${this.API_URL}/admin/movie-requests/${requestId}/reject`,
-      { note }
+      { reason }
     );
-  }
-
-  // ============================================
-  // MOCK METHODS
-  // ============================================
-
-  private mockCreateRequest(params: CreateMovieRequestParams): Observable<MovieRequest> {
-    return of(null).pipe(
-      delay(300),
-      map(() => {
-        const currentUserId = parseInt(localStorage.getItem('userId') || '1');
-        const request: MovieRequest = {
-          requestId: this.nextRequestId++,
-          userId: currentUserId,
-          requestType: params.requestType,
-          status: 'pending',
-          movieId: params.movieId,
-          movieData: params.movieData,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        };
-        this.mockRequests.push(request);
-        return request;
-      })
-    );
-  }
-
-  private mockGetMyRequests(): Observable<MovieRequestsResponse> {
-    return of(null).pipe(
-      delay(200),
-      map(() => {
-        const currentUserId = parseInt(localStorage.getItem('userId') || '1');
-        const userRequests = this.mockRequests.filter(r => r.userId === currentUserId);
-        return {
-          requests: userRequests,
-          total: userRequests.length
-        };
-      })
-    );
-  }
-
-  private mockGetAllRequests(status?: string): Observable<MovieRequestsResponse> {
-    return of(null).pipe(
-      delay(200),
-      map(() => {
-        let requests = [...this.mockRequests];
-        if (status) {
-          requests = requests.filter(r => r.status === status);
-        }
-        return {
-          requests,
-          total: requests.length
-        };
-      })
-    );
-  }
-
-  private mockApproveRequest(requestId: number, note?: string): Observable<MovieRequest> {
-    return of(null).pipe(
-      delay(300),
-      map(() => {
-        const request = this.mockRequests.find(r => r.requestId === requestId);
-        if (!request) {
-          throw new Error('Request not found');
-        }
-        const adminId = parseInt(localStorage.getItem('userId') || '1');
-        request.status = 'approved';
-        request.reviewedBy = adminId;
-        request.reviewNote = note;
-        request.updatedAt = new Date().toISOString();
-        return request;
-      })
-    );
-  }
-
-  private mockRejectRequest(requestId: number, note?: string): Observable<MovieRequest> {
-    return of(null).pipe(
-      delay(300),
-      map(() => {
-        const request = this.mockRequests.find(r => r.requestId === requestId);
-        if (!request) {
-          throw new Error('Request not found');
-        }
-        const adminId = parseInt(localStorage.getItem('userId') || '1');
-        request.status = 'rejected';
-        request.reviewedBy = adminId;
-        request.reviewNote = note;
-        request.updatedAt = new Date().toISOString();
-        return request;
-      })
-    );
-  }
-
-  private initializeMockData(): void {
-    // Algunas solicitudes de ejemplo
-    this.mockRequests = [
-      {
-        requestId: this.nextRequestId++,
-        userId: 1,
-        requestType: 'add',
-        status: 'pending',
-        movieData: {
-          title: 'New Movie 2024',
-          year: 2024,
-          genres: ['Action', 'Sci-Fi'],
-          links: {
-            imdb: 'tt1234567',
-            tmdb: '987654'
-          },
-          genomeTags: ['space', 'future'],
-          userTags: ['epic']
-        },
-        createdAt: new Date(Date.now() - 86400000).toISOString(),
-        updatedAt: new Date(Date.now() - 86400000).toISOString()
-      }
-    ];
   }
 }

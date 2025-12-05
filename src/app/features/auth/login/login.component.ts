@@ -12,7 +12,6 @@ import { AuthService } from '../../../services/auth.service';
   styleUrl: './login.component.css'
 })
 export class LoginComponent {
-  // ✅ Inyección de dependencias correcta para Angular standalone components
   private authService = inject(AuthService);
   private router = inject(Router);
   private fb = inject(FormBuilder);
@@ -34,23 +33,36 @@ export class LoginComponent {
   }
 
   onSubmit(): void {
-    if (this.loginForm.invalid) return;
+    if (this.loginForm.invalid) {
+      this.loginForm.markAllAsTouched();
+      return;
+    }
 
     this.isLoading.set(true);
     this.errorMessage.set('');
 
     const { email, password } = this.loginForm.value;
 
-    // ✅ MODO MOCK: Login con datos de prueba (ver AuthService para credenciales)
     this.authService.login({ email, password }).subscribe({
       next: (response) => {
         console.log('✅ Login exitoso:', response);
         this.isLoading.set(false);
+
+        // Si quisieras redirigir por rol:
+        // const role = response.user.role;
+        // this.router.navigate([role === 'admin' ? '/admin' : '/home']);
+
         this.router.navigate(['/home']);
       },
       error: (error) => {
         console.error('❌ Error en login:', error);
-        this.errorMessage.set(error.error || 'Credenciales inválidas. Intenta con las credenciales de prueba.');
+
+        const backendMsg =
+          (typeof error?.error === 'string' && error.error) ||
+          error?.error?.message ||
+          'Credenciales inválidas. Verifica tu email y contraseña.';
+
+        this.errorMessage.set(backendMsg);
         this.isLoading.set(false);
       }
     });
